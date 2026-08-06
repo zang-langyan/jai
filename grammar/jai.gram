@@ -1,0 +1,129 @@
+# Jai Grammar (PEG) — version 0.1
+# Based on community-reverse-engineered syntax from Jonathan Blow's demos.
+
+# --------------------------------------------------------
+file: [statements] ENDMARKER
+interactive: [statement] NL
+
+statements: statement+
+
+statement: import_stmt
+         | func_def
+         | struct_def
+         | variable_decl
+         | constant_decl
+         | using_stmt
+         | if_stmt
+         | while_stmt
+         | for_stmt
+         | return_stmt
+         | defer_stmt
+         | break_stmt
+         | continue_stmt
+         | expr_stmt
+         | compile_stmt
+
+### ---------- Import ----------
+import_stmt: '#' 'import' string ';'
+
+### ---------- Function ----------
+func_def: NAME '::' '(' [params] ')' ['->' type] block
+params: param (',' param)*
+param: NAME [':' type]
+
+### ---------- Struct ----------
+struct_def: NAME '::' 'struct' '{' struct_field* '}'
+struct_field: NAME ':' type ['=' expression] ';'
+
+### ---------- var/const ----------
+variable_decl: NAME ':=' expression ';'
+             | NAME ':' type ['=' expression] ';'
+constant_decl: NAME '::' expression ';'
+
+### ---------- using ----------
+using_stmt: 'using' name ';'
+
+### ---------- control flow ----------
+if_stmt: 'if' expression block ['else' (block | if_stmt)]
+while_stmt: 'while' expression block
+
+# TODO: for statement is implemented this way for now
+for_stmt: 'for' [for_clause] block
+for_clause: NAME ':=' expression '..' expression      # range loop
+          | NAME 'in' expression                      # iterator loop
+
+return_stmt: 'return' [expression] ';'
+defer_stmt: 'defer' block
+break_stmt: 'break' ';'
+continue_stmt: 'continue' ';'
+
+### ---------- expression statement ----------
+expr_stmt: expression ';'
+
+### ---------- compile time statement ----------
+compile_stmt: '#' 'run' block
+            | '#' 'insert' expression ';'
+            | '#' 'modify' expression ';'   # to be defined ...
+
+### ---------- Block ----------
+block: '{' statements '}'
+
+### ---------- Expression ----------
+# Note: PEG's priority is determined by order, top rule has lower priority than following ones
+expression: assignment
+
+assignment: logical_or '=' expression                 # assignment expr (right associate)
+          | logical_or
+
+logical_or: logical_and ('||' logical_and)*
+logical_and: bitwise_or ('&&' bitwise_or)*
+bitwise_or: bitwise_xor ('|' bitwise_xor)*
+bitwise_xor: bitwise_and ('^' bitwise_and)*
+bitwise_and: shift_expr ('&' shift_expr)*
+shift_expr: additive_expr (('<<' | '>>') additive_expr)*
+additive_expr: multiplicative_expr (('+' | '-') multiplicative_expr)*
+multiplicative_expr: unary_expr (('*' | '/' | '%') unary_expr)*
+
+unary_expr: ('-' | '!' | '<<' | '*') unary_expr   # prefix unary
+          | postfix_expr
+
+postfix_expr: primary_expr (
+    '(' [arguments] ')' 
+    | '[' expression ']' 
+    | '.' name
+    )*
+
+primary_expr: name
+            | literal
+            | '(' expression ')'
+            | 'cast' '(' type ')' expression       # cast(Type) expr
+            | 'New' '(' type ')'
+            | lambda_expr
+            | if_expr
+            | array_literal
+
+arguments: expression (',' expression)*
+
+lambda_expr: '(' [params] ')' '->' [type] block
+
+if_expr: 'if' expression expression 'else' expression   # if cond thenExpr elseExpr
+
+array_literal: '.' '[' [expression_list] ']'
+             | type '.' '[' [expression_list] ']'
+expression_list: expression (',' expression)*
+
+### ---------- Literal ----------
+literal: integer_literal | float_literal | string_literal | char_literal | 'true' | 'false'
+
+### ---------- Types ----------
+type: named_type
+    | pointer_type
+    | array_type
+    | function_type
+
+named_type: name
+pointer_type: '*' type
+array_type: '[' ['..' | expression] ']' type
+function_type: '(' [type_list] ')' '->' type
+type_list: type (',' type)*
+

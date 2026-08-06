@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+LLVM_HOME="/opt/homebrew/opt/llvm@17"
+# export PATH="$LLVM_HOME/bin:$PATH"
+
+rm -rf build
+
+echo "================================================================================"
+echo "Building LLVM Pass and Runtime Object"
+# make sure using the same version of clang as llvm pass version
+cmake -B build \
+  -DCMAKE_CXX_COMPILER=$LLVM_HOME/bin/clang++ \
+  -DCMAKE_C_COMPILER=$LLVM_HOME/bin/clang \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+
+cmake --build ./build
+echo "================================================================================"
