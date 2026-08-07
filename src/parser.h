@@ -22,8 +22,10 @@ public:
     ~Parser() = default;
 
     int initialize(FILE* fp, CompilerType t, Arena* lexer_ar, Arena* tok_ar, Arena* ast_ar) {
-        _l.setfile(fp);
-        _f = fp;
+        if (fp) {
+            _l.setfile(fp);
+            _f = fp;
+        }
         if (_l.setArena(lexer_ar)) {
             return -1;
         }
@@ -37,6 +39,11 @@ public:
         _initialized = true;
         return 0;
     }
+
+    void setsource(const char* src, size_t n) {
+        _l.setsource(src, n);
+    }
+
     void set_type(CompilerType t);
     int set_ast_ar(Arena* a);
     int set_token_ar(Arena* a);

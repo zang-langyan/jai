@@ -20,8 +20,13 @@ class Lexer {
     int _line, _col;
     Arena* _ar;
 public:
-    Lexer() = default;
-    ~Lexer() { delete[] _buf; };
+    Lexer():
+        _f(nullptr), _ar(nullptr),
+        _buf(nullptr), _buf_size(0),
+        _cur(nullptr), _end(nullptr),
+        _line(1), _col(1)
+    {}
+    ~Lexer() { if (_buf) delete[] _buf; };
 
     void setfile(FILE* f) {
         _f = f;
@@ -41,6 +46,20 @@ public:
         _line = 1;
         _col = 1;
         fclose(_f);
+    }
+
+    void setsource(const char* src, size_t n) {
+        if (_buf) {
+            delete[] _buf;
+            _buf = nullptr;
+        }
+        _buf = new char[n + 1];
+        memcpy(_buf, src, n);
+        _buf[n] = '\0';
+        _cur = _buf;
+        _end = _buf + n;
+        _line = 1;
+        _col = 1;
     }
 
     int setArena(Arena* a) {

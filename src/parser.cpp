@@ -43,7 +43,9 @@ ASTNode* Parser::parse() {
         ERROR("Tokens Arena is null!");
     }
 
-    // TODO make sure lexer is initialized
+    _mark = 0;
+    _toks.clear();
+
     switch (_type) {
     case CompilerType::File:
         return file_rule();

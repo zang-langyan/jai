@@ -80,7 +80,7 @@ inline std::string operator ""_cyan(const char* message, size_t) {
 #define DEBUG(s) std::cout << "\033[1;91m"    "Jai-Jit DEBUG: "   << __FILE__ << "[" << __LINE__ << "]" << "[" << __FUNCTION__ << "]: " << s << "\033[0m\n"
 #define LOG(s, pat, color) std::cout << "\033[" pat color"m" s "\033[0m\n"
 
-#define DBPRINT(s) std::cout << "\033[1;34m"    "Jai-Jit TRACE: "   << __FILE__ << "[" << __LINE__ << "]" << "[" << __FUNCTION__ << "]: " << s << "\033[0m\n"
-// #define DBPRINT(s)
+// #define DBPRINT(s) std::cout << "\033[1;34m"    "Jai-Jit TRACE: "   << __FILE__ << "[" << __LINE__ << "]" << "[" << __FUNCTION__ << "]: " << s << "\033[0m\n"
+#define DBPRINT(s)
 
 #endif

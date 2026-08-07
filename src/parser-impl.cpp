@@ -14,7 +14,7 @@ ASTNode* Parser::file_rule(){
         (res || (res = _ast_ar->New<Module>()))
     ) {
         res->statements = a;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -30,6 +30,7 @@ ASTNode* Parser::interactive_rule(){
         && (res || (res = _ast_ar->New<Interactive>()))
     ) {
         res->statements = a;
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -39,7 +40,7 @@ ASTNode* Parser::interactive_rule(){
         && (res || (res = _ast_ar->New<Interactive>()))
     ) {
         res->statements = a;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -55,15 +56,11 @@ ASTNode* Parser::name_rule() {
         (name = expect(TokenType::Identifier)) &&
         (res || (res = _ast_ar->New<Name>()))
     ) {
-        // if (name->data.lexeme == nullptr) {
-        //     std::vector<Token> t{*name};
-        //     dumpTokens(t);
-        // }
         res->name = name->data.lexeme;
         res->len = name->length;
         res->startPos = {name->pos.sr, name->pos.sc};
         res->endPos   = {name->pos.er, name->pos.ec};
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -78,7 +75,7 @@ ASTNode* Parser::op_rule(TokenType exp, OpType target) {
         && (res || (res = _ast_ar->New<Op>()))
     ) {
         res->op_type = target;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -134,7 +131,7 @@ ASTNode* Parser::literal_rule() {
     }
     res->startPos = {t->pos.sr, t->pos.sc};
     res->endPos   = {t->pos.er, t->pos.ec};
-    DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+    DBPRINT(res->dump());
     return res;
 }
 
@@ -152,7 +149,7 @@ ASTNode* Parser::statements(){
         _mark = m;
         return nullptr;
     }
-    DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+    DBPRINT(res->dump());
     return res;
 }
 
@@ -181,7 +178,7 @@ ASTNode* Parser::statement(){
         (res || (res = _ast_ar->New<SingleStmt>()))
     ) {
         res->stmt = a;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -203,14 +200,8 @@ ASTNode* Parser::import_stmt(){
         && (res || (res = _ast_ar->New<ImportStmt>()))
     ) {
         res->import_name = s;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
-    } else {
-        // if (s) {
-        //     DEBUG(s->dump());
-        // } else {
-        //     DEBUG("s is nullptr");
-        // }
     }
     _mark = m;
     return nullptr;
@@ -240,7 +231,7 @@ ASTNode* Parser::func_def(){
         res->params = paramters;
         res->returnType = ret_type;
         res->body = body;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -274,7 +265,7 @@ ASTNode* Parser::param(){
     ) {
         res->name = pname;
         res->typeAnnotation = ptype;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -305,7 +296,7 @@ ASTNode* Parser::struct_def(){
     ) {
         res->name = stname;
         res->fields = fields;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -334,7 +325,7 @@ ASTNode* Parser::struct_field(){
             res->name = fname;
             res->typeAnnotation = ftype;
             res->initializer = finit;
-            DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+            DBPRINT(res->dump());
             return res;
         }
         _mark = mm;
@@ -345,7 +336,7 @@ ASTNode* Parser::struct_field(){
             res->name = fname;
             res->typeAnnotation = ftype;
             res->initializer = nullptr;
-            DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+            DBPRINT(res->dump());
             return res;
         }
     }
@@ -369,7 +360,7 @@ ASTNode* Parser::variable_decl(){
         res->name = vname;
         res->typeAnnotation = vtype;
         res->initializer = vinit;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -388,7 +379,7 @@ ASTNode* Parser::variable_decl(){
             res->name = vname;
             res->typeAnnotation = vtype;
             res->initializer = vinit;
-            DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+            DBPRINT(res->dump());
             return res;
         }
         _mark = mm;
@@ -411,7 +402,7 @@ ASTNode* Parser::constant_decl(){
     ) {
         res->name = name;
         res->value = value;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -429,7 +420,7 @@ ASTNode* Parser::using_stmt(){
         && (res || (res = _ast_ar->New<UsingDecl>()))
     ) {
         res->target = target;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -457,7 +448,7 @@ ASTNode* Parser::if_stmt(){
                 res->condition = condition;
                 res->thenBranch = thenBranch;
                 res->elseBranch = elseBranch;
-                DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+                DBPRINT(res->dump());
                 return res;
             }
             _mark = mmm;
@@ -468,7 +459,7 @@ ASTNode* Parser::if_stmt(){
                 res->condition = condition;
                 res->thenBranch = thenBranch;
                 res->elseBranch = elseBranch;
-                DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+                DBPRINT(res->dump());
                 return res;
             }
             // TODO: ERROR only 'else', no following
@@ -479,7 +470,7 @@ ASTNode* Parser::if_stmt(){
             res->condition = condition;
             res->thenBranch = thenBranch;
             res->elseBranch = elseBranch;
-            DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+            DBPRINT(res->dump());
             return res;
         }
     }
@@ -499,7 +490,7 @@ ASTNode* Parser::while_stmt(){
     ) {
         res->condition = condition;
         res->body = body;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     } 
     _mark = m;
@@ -527,7 +518,7 @@ ASTNode* Parser::for_stmt(){
         res->condition = condition;
         res->increment = increment;
         res->body = body;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -545,7 +536,7 @@ ASTNode* Parser::return_stmt(){
         && (res || (res = _ast_ar->New<ReturnStmt>()))
     ) {
         res->expr = expr;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -562,7 +553,7 @@ ASTNode* Parser::defer_stmt(){
         && (res || (res = _ast_ar->New<DeferStmt>()))
     ) {
         res->body = body;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -577,7 +568,7 @@ ASTNode* Parser::break_stmt(){
         && expect(TokenType::SEMI)
         && (res || (res = _ast_ar->New<BreakStmt>()))
     ) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -592,7 +583,7 @@ ASTNode* Parser::continue_stmt(){
         && expect(TokenType::SEMI)
         && (res || (res = _ast_ar->New<ContinueStmt>()))
     ) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -609,7 +600,7 @@ ASTNode* Parser::expr_stmt(){
         && (res || (res = _ast_ar->New<ExprStmt>()))
     ) {
         res->expr = expr;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -630,7 +621,7 @@ ASTNode* Parser::compile_stmt(){
             && (res || (res = _ast_ar->New<CompileStmt>()))
         ) {
             res->body = body;
-            DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+            DBPRINT(res->dump());
             return res;
         }
         _mark = mm;
@@ -641,7 +632,7 @@ ASTNode* Parser::compile_stmt(){
             && (res || (res = _ast_ar->New<CompileStmt>()))
         ) {
             res->body = body;
-            DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+            DBPRINT(res->dump());
             return res;
         }
         _mark = mm;
@@ -652,7 +643,7 @@ ASTNode* Parser::compile_stmt(){
             && (res || (res = _ast_ar->New<CompileStmt>()))
         ) {
             res->body = body;
-            DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+            DBPRINT(res->dump());
             return res;
         }
         _mark = mm;
@@ -673,7 +664,7 @@ ASTNode* Parser::block(){
         && (res || (res = _ast_ar->New<BlockStmt>()))
     ) {
         res->stmts = stmts;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -686,7 +677,7 @@ ASTNode* Parser::expression(){
     if (
         (res = assignment())
     ) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -709,14 +700,14 @@ ASTNode* Parser::assignment(){
         a->left = left;
         a->op = op;
         a->right = right;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if (
         (res = logical_or())
     ) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -750,7 +741,7 @@ ASTNode* Parser::logical_or(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -784,7 +775,7 @@ ASTNode* Parser::logical_and(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -818,7 +809,7 @@ ASTNode* Parser::bitwise_or(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -852,7 +843,7 @@ ASTNode* Parser::bitwise_xor(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -886,7 +877,7 @@ ASTNode* Parser::bitwise_and(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -923,7 +914,7 @@ ASTNode* Parser::shift_expr(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -960,7 +951,7 @@ ASTNode* Parser::additive_expr(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -998,7 +989,7 @@ ASTNode* Parser::multiplicative_expr(){
             }
         }
         res = left;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1023,14 +1014,14 @@ ASTNode* Parser::unary_expr(){
         UnaryExpr* a = reinterpret_cast<UnaryExpr*>(res);
         a->op = op;
         a->operand = operand;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if (
         (res = postfix_expr())
     ) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1115,7 +1106,7 @@ ASTNode* Parser::postfix_expr(){
             break;
         }
         res = primary;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1132,7 +1123,7 @@ ASTNode* Parser::primary_expr(){
         && (res || (res = _ast_ar->New<IdentifierExpr>()))
     ){
         reinterpret_cast<IdentifierExpr*>(res)->name = a;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1141,7 +1132,7 @@ ASTNode* Parser::primary_expr(){
         && (res || (res = _ast_ar->New<LiteralExpr>()))
     ){
         reinterpret_cast<LiteralExpr*>(res)->lit = reinterpret_cast<Literal*>(a);
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1151,7 +1142,7 @@ ASTNode* Parser::primary_expr(){
         && expect(TokenType::RPAR)
     ){
         res = a;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1165,7 +1156,7 @@ ASTNode* Parser::primary_expr(){
     ){
         reinterpret_cast<CastExpr*>(res)->type = a;
         reinterpret_cast<CastExpr*>(res)->expr = b;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1177,28 +1168,28 @@ ASTNode* Parser::primary_expr(){
         && (res || (res = _ast_ar->New<NewExpr>()))
     ){
         reinterpret_cast<NewExpr*>(res)->type = a;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if (
         (res = lambda_expr())
     ){
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if (
         (res = if_expr())
     ){
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if (
         (res = array_literal())
     ){
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1236,7 +1227,7 @@ ASTNode* Parser::lambda_expr(){
         res->parameters = parameters;
         res->returnType = returnType;
         res->body = body;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1260,7 +1251,7 @@ ASTNode* Parser::if_expr(){
         res->condition = condition;
         res->thenExpr = thenExpr;
         res->elseExpr = elseExpr;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1282,7 +1273,7 @@ ASTNode* Parser::array_literal(){
     ) {
         res->type = type;
         res->elements = elements;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1306,22 +1297,22 @@ ASTNode* Parser::type_rule(){
     ASTNode* res = nullptr;
     size_t m = _mark;
     if ((res = named_type())) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if ((res = pointer_type())) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if ((res = array_type())) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
     if ((res = function_type())) {
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1337,7 +1328,7 @@ ASTNode* Parser::named_type(){
         && (res || (res = _ast_ar->New<NamedType>()))
     ) {
         res->name = name;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1354,7 +1345,7 @@ ASTNode* Parser::pointer_type(){
         && (res || (res = _ast_ar->New<PointerType>()))
     ) {
         res->baseType = baseType;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1379,7 +1370,7 @@ ASTNode* Parser::array_type(){
     ) {
         res->elementType = elementType;
         res->sizeExpr = sizeExpr;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
@@ -1401,7 +1392,7 @@ ASTNode* Parser::function_type(){
     ) {
         res->paramTypes = paramTypes;
         res->returnType = returnType;
-        DBPRINT("[" << __FUNCTION__ << "]" << res->dump());
+        DBPRINT(res->dump());
         return res;
     }
     _mark = m;
