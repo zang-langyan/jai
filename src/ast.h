@@ -1,7 +1,7 @@
 #ifndef JAI_AST_H
 #define JAI_AST_H
 #include "token.h"
-#include <string_view>
+#include "symtable.h"
 #include <vector>
 
 enum class ASTNodeType {
@@ -15,12 +15,12 @@ enum class ASTNodeType {
     Literal,
 
     // declaration
-    FuncDecl,              // 函数定义
-    StructDecl,            // 结构体
+    FuncDecl,
+    StructDecl,
     StructFields,
     VariableDecl,          // name := value / name : Type = value
     ConstantDecl,          // name :: value
-    UsingDecl,             // using ... 引入命名空间
+    UsingDecl,
 
     // statements
     CompoundStmts,
@@ -29,29 +29,28 @@ enum class ASTNodeType {
     BlockStmt,
     IfStmt,
     WhileStmt,
-    ForStmt,               // Jai 特色的 for
+    ForStmt,
     ReturnStmt,
     DeferStmt,
-    ExprStmt,              // 把表达式当语句
+    ExprStmt,
     BreakStmt,
     ContinueStmt,
-    SwitchStmt,            // 可能用 if 链，但保留
     CompileStmt,
 
     // expressions
     BinaryExpr,
     UnaryExpr,
     CallExpr,
-    IndexExpr,             // a[i]
-    MemberAccessExpr,      // obj.member
+    IndexExpr,
+    MemberAccessExpr,
     IdentifierExpr,
-    LiteralExpr,           // 整数、浮点、布尔、字符串、字符等
+    LiteralExpr,
     CastExpr,              // cast(Type) expr
-    ArrayLiteralExpr,      // .[ ... ] 或 Type.[ ... ]
-    NewExpr,               // new Type / new [N]Type
+    ArrayLiteralExpr,      // .[ ... ] or Type.[ ... ]
+    NewExpr,               // New(Type)
     LambdaExpr,
-    IfExpr,                // if 作为表达式
-    RunExpr,               // #run expr  编译期执行
+    IfExpr,
+    RunExpr,               // #run expr
 
     // Type annotation
     NamedType,
@@ -89,8 +88,13 @@ public:
         ASTContext context;
         return dump_impl(); 
     }
+
+    int visit(SymTable& symtable) {
+        return visit_impl(symtable);
+    }
 private:
     virtual std::string dump_impl() { return ""; };
+    virtual int visit_impl(SymTable& symtable) = 0;
 };
 
 /* Root Ast */
@@ -107,6 +111,7 @@ private:
         res += statements->dump();
         return res; 
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class Interactive : public ASTNode {
@@ -122,9 +127,8 @@ private:
         if (statements) res += statements->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
-
-
 
 /* Atom*/
 struct Name: public ASTNode {
@@ -138,12 +142,13 @@ private:
         std::string res(ASTContext::depth * 4, ' ');
         res += "[Name]: ";
         if (name) {
-            res += std::string(name, len) + '\n';   // 使用长度构造，避免 strlen 越界
+            res += std::string(name, len) + '\n';
         } else {
             res += "(null)\n";
         }
         return res; 
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 enum class OpType {
@@ -183,7 +188,6 @@ private:
     virtual std::string dump_impl() override {
         std::string res(ASTContext::depth * 4, ' ');
         res += "[Op]: ";
-        // 简单把 OpType 转成字符串
         switch (op_type) {
             case OpType::NEGATIVE:      res += "- (unary)";             break;
             case OpType::POSITIVE:      res += "+ (unary)";             break;
@@ -214,6 +218,7 @@ private:
         res += "\n";
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 struct Literal: public ASTNode {
@@ -244,6 +249,7 @@ private:
         res += "\n";
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 /* Declaration Ast */
@@ -274,6 +280,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ConstantDecl : public ASTNode {
@@ -296,12 +303,13 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class FuncDecl : public ASTNode {
 public:
     ASTNode* name;
-    ASTNode* params; // arg names + type
+    ASTNode* params;           // arg names + type
     ASTNode* returnType;
     ASTNode* body;             // function body (BlockStmt)
 
@@ -332,6 +340,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class StructDecl : public ASTNode {
@@ -356,6 +365,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class UsingDecl : public ASTNode {
@@ -370,6 +380,7 @@ private:
         if (target) res += target->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 /* Statement Ast */
@@ -387,6 +398,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class SingleStmt: public ASTNode {
@@ -403,6 +415,7 @@ private:
         };
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class BlockStmt : public ASTNode {
@@ -419,6 +432,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ImportStmt: public ASTNode {
@@ -433,6 +447,7 @@ private:
         if (import_name) res += import_name->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class IfStmt : public ASTNode {
@@ -466,6 +481,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class WhileStmt : public ASTNode {
@@ -492,6 +508,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ForStmt : public ASTNode {
@@ -532,6 +549,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ReturnStmt : public ASTNode {
@@ -554,6 +572,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class DeferStmt : public ASTNode {
@@ -568,6 +587,7 @@ private:
         if (body) res += body->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ExprStmt : public ASTNode {
@@ -582,6 +602,7 @@ private:
         if (expr) res += expr->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class BreakStmt : public ASTNode {
@@ -593,6 +614,7 @@ private:
         res += "[BreakStmt]\n";
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ContinueStmt : public ASTNode {
@@ -604,6 +626,7 @@ private:
         res += "[ContinueStmt]\n";
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 enum class CompileStmtType {
@@ -641,6 +664,7 @@ private:
         res += body->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 /* Expression Ast */
@@ -675,6 +699,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class UnaryExpr : public ASTNode {
@@ -702,6 +727,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class CallExpr : public ASTNode {
@@ -731,6 +757,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class IndexExpr : public ASTNode {
@@ -757,6 +784,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class MemberAccessExpr : public ASTNode {
@@ -783,6 +811,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class IdentifierExpr : public ASTNode {
@@ -797,6 +826,7 @@ private:
         if (name) res += name->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class LiteralExpr : public ASTNode {
@@ -811,6 +841,7 @@ private:
         if (lit) res += lit->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class CastExpr : public ASTNode {
@@ -838,6 +869,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ArrayLiteralExpr : public ASTNode {
@@ -862,6 +894,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class NewExpr : public ASTNode {
@@ -881,6 +914,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class LambdaExpr : public ASTNode {
@@ -926,6 +960,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class IfExpr : public ASTNode {
@@ -959,6 +994,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class RunExpr : public ASTNode {
@@ -973,6 +1009,7 @@ private:
         if (body) res += body->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 /* Type Annotation */
@@ -988,6 +1025,7 @@ private:
         if (name) res += name->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class PointerType : public ASTNode {
@@ -1002,6 +1040,7 @@ private:
         if (baseType) res += baseType->dump();
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class ArrayType : public ASTNode {
@@ -1028,6 +1067,7 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 
 class FunctionType : public ASTNode {
@@ -1057,5 +1097,6 @@ private:
         }
         return res;
     }
+    virtual int visit_impl(SymTable& symtable) override;
 };
 #endif

@@ -28,8 +28,8 @@ void repl() {
 }
 
 int main(int argc, char** argv) {
-    repl();
-    return 0;
+    // repl();
+    // return 0;
     if (argc < 2) {
         fputs("provide a input file\n",stderr);
         exit(1);

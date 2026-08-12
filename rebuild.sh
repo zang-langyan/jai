@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LLVM_HOME="/opt/homebrew/opt/llvm@17"
+LLVM_HOME="/opt/homebrew/opt/llvm"
 # export PATH="$LLVM_HOME/bin:$PATH"
 
 rm -rf build
