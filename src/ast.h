@@ -240,11 +240,11 @@ private:
         std::string res(ASTContext::depth * 4, ' ');
         res += "[Literal]: ";
         switch (litType) {
-            case LitType::Int:    res += std::to_string(intVal); break;
-            case LitType::Float:  res += std::to_string(floatVal); break;
-            case LitType::Bool:   res += (boolVal ? "true" : "false"); break;
-            case LitType::Char:   res += "'" + std::string(1, (char)intVal) + "'"; break;
-            case LitType::String: res += "\"" + escapeString(stringVal.s, stringVal.len) + "\""; break;
+            case LitType::Int:    res += "[INT] " + std::to_string(intVal); break;
+            case LitType::Float:  res += "[FLOAT] " + std::to_string(floatVal); break;
+            case LitType::Bool:   res += "[BOOL] " + (boolVal ? std::string("true") : std::string("false")); break;
+            case LitType::Char:   res += "[BOOL] '" + std::string(1, (char)intVal) + "'"; break;
+            case LitType::String: res += "[STRING] \"" + escapeString(stringVal.s, stringVal.len) + "\""; break;
         }
         res += "\n";
         return res;
