@@ -1,5 +1,8 @@
 #ifndef JAI_SYMTABLE_H
 #define JAI_SYMTABLE_H
+#include "arena.h"
+#include "logging.h"
+#include <cstddef>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -61,22 +64,37 @@ struct Symbol {
 
 class SymTable {
 public:
-    using Scope = std::unordered_map<std::string, Symbol*>;
+    using OverloadSet = std::vector<Symbol*>;
+    using Scope = std::unordered_map<std::string, OverloadSet>;
+    Arena* _ar_symbol {nullptr};
 public:
     SymTable() {
         enterScope();
+    }
+    int set_symbol_arena(Arena* ar) {
+        _ar_symbol = ar;
+        return 0;
+    }
+    Arena* get_symbol_arena() {
+        if (!_ar_symbol) {
+            ERROR("Symbol Arena in SymTable is NULL!");
+            return nullptr;
+        }
+        return _ar_symbol;
     }
 
     void enterScope();
     void exitScope();
 
-    bool insert(const std::string& name, Symbol symbol);
+    bool insert(const std::string& name, Symbol* symbol);
 
     Symbol* lookup(const std::string& name);
 
     Symbol* lookupLocal(const std::string& name);
 
-    Scope& globalScope();
+    Symbol* lookupOverload(const std::string& name, const std::vector<TypeInfo*>& sig);
+    
+    Scope* globalScope();
 
     void resetToGlobal();
 private:

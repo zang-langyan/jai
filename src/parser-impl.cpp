@@ -193,7 +193,7 @@ ASTNode* Parser::import_stmt(){
         expect(TokenType::SHARP)
         && expect(TokenType::IMPORT)
         && (
-            (s = reinterpret_cast<Literal*>(literal_rule())) && 
+            (s = static_cast<Literal*>(literal_rule())) && 
             s->litType == Literal::LitType::String
         )
         && expect(TokenType::SEMI)
@@ -275,7 +275,7 @@ ASTNode* Parser::param(){
 
 int Parser::struct_fields_loop(std::vector<VariableDecl*>& res) {
     VariableDecl* field = nullptr;
-    while ((field = reinterpret_cast<VariableDecl*>(struct_field()))) {
+    while ((field = static_cast<VariableDecl*>(struct_field()))) {
         res.emplace_back(field);
     }
     return 0;
@@ -696,7 +696,7 @@ ASTNode* Parser::assignment(){
         && (right = expression())
         && (res || (res = _ast_ar->New<BinaryExpr>()))
     ) {
-        BinaryExpr* a = reinterpret_cast<BinaryExpr*>(res);
+        BinaryExpr* a = static_cast<BinaryExpr*>(res);
         a->left = left;
         a->op = op;
         a->right = right;
@@ -1011,7 +1011,7 @@ ASTNode* Parser::unary_expr(){
         && (operand = unary_expr())
         && (res || (res = _ast_ar->New<UnaryExpr>()))
     ) {
-        UnaryExpr* a = reinterpret_cast<UnaryExpr*>(res);
+        UnaryExpr* a = static_cast<UnaryExpr*>(res);
         a->op = op;
         a->operand = operand;
         DBPRINT(res->dump());
@@ -1047,7 +1047,7 @@ ASTNode* Parser::postfix_expr(){
                     && expect(TokenType::RPAR)
                     && (res || (res = _ast_ar->New<CallExpr>()))
                 ) {
-                    CallExpr* a = reinterpret_cast<CallExpr*>(res);
+                    CallExpr* a = static_cast<CallExpr*>(res);
                     a->callee = primary;
                     a->arguments = args;
                     primary = res;
@@ -1069,7 +1069,7 @@ ASTNode* Parser::postfix_expr(){
                     && expect(TokenType::RSQB)
                     && (res || (res = _ast_ar->New<IndexExpr>()))
                 ) {
-                    IndexExpr* a = reinterpret_cast<IndexExpr*>(res);
+                    IndexExpr* a = static_cast<IndexExpr*>(res);
                     a->base = primary;
                     a->index = index;
                     primary = res;
@@ -1090,7 +1090,7 @@ ASTNode* Parser::postfix_expr(){
                     (name = name_rule())
                     && (res || (res = _ast_ar->New<MemberAccessExpr>()))
                 ) {
-                    MemberAccessExpr* a = reinterpret_cast<MemberAccessExpr*>(res);
+                    MemberAccessExpr* a = static_cast<MemberAccessExpr*>(res);
                     a->object = primary;
                     a->member = name;
                     primary = res;
@@ -1122,7 +1122,7 @@ ASTNode* Parser::primary_expr(){
         (a = name_rule())
         && (res || (res = _ast_ar->New<IdentifierExpr>()))
     ){
-        reinterpret_cast<IdentifierExpr*>(res)->name = a;
+        static_cast<IdentifierExpr*>(res)->name = a;
         DBPRINT(res->dump());
         return res;
     }
@@ -1131,7 +1131,7 @@ ASTNode* Parser::primary_expr(){
         (a = literal_rule())
         && (res || (res = _ast_ar->New<LiteralExpr>()))
     ){
-        reinterpret_cast<LiteralExpr*>(res)->lit = reinterpret_cast<Literal*>(a);
+        static_cast<LiteralExpr*>(res)->lit = static_cast<Literal*>(a);
         DBPRINT(res->dump());
         return res;
     }
@@ -1154,8 +1154,8 @@ ASTNode* Parser::primary_expr(){
         && (b = expression())
         && (res || (res = _ast_ar->New<CastExpr>()))
     ){
-        reinterpret_cast<CastExpr*>(res)->type = a;
-        reinterpret_cast<CastExpr*>(res)->expr = b;
+        static_cast<CastExpr*>(res)->type = a;
+        static_cast<CastExpr*>(res)->expr = b;
         DBPRINT(res->dump());
         return res;
     }
@@ -1167,7 +1167,7 @@ ASTNode* Parser::primary_expr(){
         && expect(TokenType::RPAR)
         && (res || (res = _ast_ar->New<NewExpr>()))
     ){
-        reinterpret_cast<NewExpr*>(res)->type = a;
+        static_cast<NewExpr*>(res)->type = a;
         DBPRINT(res->dump());
         return res;
     }

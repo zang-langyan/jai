@@ -1,5 +1,6 @@
 #ifndef JAI_AST_H
 #define JAI_AST_H
+#include "logging.h"
 #include "token.h"
 #include "symtable.h"
 #include <vector>
@@ -80,8 +81,9 @@ public:
     ASTNodeType type;
     SourcePos startPos;
     SourcePos endPos;
+    TypeInfo* inferred_type; /* for variable or expression*/
 
-    ASTNode(ASTNodeType t) : type(t) {}
+    ASTNode(ASTNodeType t) : type(t), inferred_type(nullptr) {}
     virtual ~ASTNode() = default;
 
     std::string dump() {
@@ -176,6 +178,8 @@ enum class OpType {
     BITAND,
     LESSEQ,
     GREATEREQ,
+    EQUAL,
+    UNEQUAL,
     RANGE, /* .. */
     INVALID
 };
@@ -212,6 +216,8 @@ private:
             case OpType::BITAND:        res += "& (bit and)";           break;
             case OpType::LESSEQ:        res += "<= (less or equal)";    break;
             case OpType::GREATEREQ:     res += ">= (greater or equal)"; break;
+            case OpType::EQUAL:       res += "== (greater or equal)"; break;
+            case OpType::UNEQUAL:       res += "!= (greater or equal)"; break;
             case OpType::RANGE:         res += ".. (range)";            break;
             default:                    res += "???";                   break;
         }
@@ -259,13 +265,22 @@ public:
     ASTNode* typeAnnotation;
     ASTNode* initializer;
 
+    Symbol* symbol;
+
     VariableDecl()
-        : ASTNode(ASTNodeType::VariableDecl) {}
+        : ASTNode(ASTNodeType::VariableDecl),
+        name(nullptr), typeAnnotation(nullptr), initializer(nullptr),
+        symbol(nullptr) 
+        {}
 private:
     virtual std::string dump_impl() override {
         std::string res(ASTContext::depth * 4, ' ');
         res += "[VariableDecl]:\n";
-        if (name) res += name->dump();
+        if (name) {
+            res += name->dump();
+        } else {
+            ERROR("VariableDecl name member is null!");
+        }
         if (typeAnnotation) {
             ASTContext ctx;
             std::string type_label(ASTContext::depth * 4, ' ');
@@ -288,8 +303,13 @@ public:
     ASTNode* name;
     ASTNode* value;            // :: x，x must be a compile time constant
 
+    Symbol* symbol;
+
     ConstantDecl()
-        : ASTNode(ASTNodeType::ConstantDecl) {}
+        : ASTNode(ASTNodeType::ConstantDecl),
+        name(nullptr), value(nullptr),
+        symbol(nullptr)
+        {}
 private:
     virtual std::string dump_impl() override {
         std::string res(ASTContext::depth * 4, ' ');
@@ -313,8 +333,13 @@ public:
     ASTNode* returnType;
     ASTNode* body;             // function body (BlockStmt)
 
+    Symbol* symbol;
+
     FuncDecl()
-        : ASTNode(ASTNodeType::FuncDecl) {}
+        : ASTNode(ASTNodeType::FuncDecl),
+        name(nullptr), params(nullptr), returnType(nullptr), body(nullptr),
+        symbol(nullptr)
+        {}
 private:
     virtual std::string dump_impl() override {
         std::string res(ASTContext::depth * 4, ' ');
@@ -348,7 +373,11 @@ public:
     ASTNode* name;
     std::vector<VariableDecl*> fields;  // member variables
 
-    StructDecl() : ASTNode(ASTNodeType::StructDecl) {}
+    Symbol* symbol;
+
+    StructDecl() : ASTNode(ASTNodeType::StructDecl),
+    name(nullptr), symbol(nullptr)
+    {}
 private:
     virtual std::string dump_impl() override {
         std::string res(ASTContext::depth * 4, ' ');
@@ -818,7 +847,10 @@ class IdentifierExpr : public ASTNode {
 public:
     ASTNode* name;
 
-    IdentifierExpr(): ASTNode(ASTNodeType::IdentifierExpr) {}
+    Symbol* symbol; /* which symbol this identifier it refers to */
+
+    IdentifierExpr(): ASTNode(ASTNodeType::IdentifierExpr),
+    name(nullptr), symbol(nullptr) {}
 private:
     virtual std::string dump_impl() override {
         std::string res(ASTContext::depth * 4, ' ');
