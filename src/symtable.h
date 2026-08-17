@@ -39,6 +39,8 @@ struct TypeInfo {
 
     // for struct
     std::vector<Symbol*> fields;
+
+    std::string dump();
 };
 
 struct Symbol {
@@ -60,6 +62,8 @@ struct Symbol {
 
     size_t scopeLevel    = 0;
     ASTNode* declNode    = nullptr;
+
+    std::string dump();
 };
 
 class SymTable {
@@ -97,6 +101,8 @@ public:
     Scope* globalScope();
 
     void resetToGlobal();
+
+    void add_builtin();
 private:
     std::vector<Scope> _scopes;
 };

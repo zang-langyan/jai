@@ -216,22 +216,67 @@ int BlockStmt::visit_impl(SymTable& symtable) {
 }
 
 int ImportStmt::visit_impl(SymTable& symtable) {
-    return 0;
+    std::string modName = std::string(
+        static_cast<Literal*>(import_name)->stringVal.s,
+        static_cast<Literal*>(import_name)->stringVal.len
+    );
+    Symbol* modSym = symtable.get_symbol_arena()->New<Symbol>();
+    modSym->name = modName;
+    modSym->kind = SymKind::Module;
+    modSym->type = nullptr;
+    return symtable.insert(modSym->name, modSym) ? 0 : -1;
 }
 
 int IfStmt::visit_impl(SymTable& symtable) {
+    if (!condition || !thenBranch) return -1;
+    condition->visit(symtable);
+    if (condition->inferred_type && condition->inferred_type->kind != TypeInfo::Kind::Bool) {
+        ERROR("Condition must be bool");
+        return -1;
+    }
+    thenBranch->visit(symtable);
+    if (elseBranch) elseBranch->visit(symtable);
     return 0;
 }
 
 int WhileStmt::visit_impl(SymTable& symtable) {
+    if (!condition || !body) return -1;
+    condition->visit(symtable);
+    if (condition->inferred_type && condition->inferred_type->kind != TypeInfo::Kind::Bool) {
+        ERROR("Condition must be bool");
+        return -1;
+    }
+    body->visit(symtable);
     return 0;
 }
 
 int ForStmt::visit_impl(SymTable& symtable) {
+    if (init) init->visit(symtable);
+    if (condition) {
+        condition->visit(symtable);
+        if (condition->inferred_type && condition->inferred_type->kind != TypeInfo::Kind::Bool) {
+            ERROR("Condition must be bool");
+            return -1;
+        }
+    }
+    if (increment) increment->visit(symtable);
+    if (body) body->visit(symtable);
     return 0;
 }
 
 int ReturnStmt::visit_impl(SymTable& symtable) {
+    if (!expr) {
+        // 返回 void
+        return 0;
+    }
+    if (expr->visit(symtable) != 0) return -1;
+
+    /* TODO: check return type */
+    // TypeInfo* retType = symtable.get_current_function_return_type();
+    // if (retType && !symtable.type_compatible(retType, expr->inferred_type)) {
+    //     ERROR("Return type mismatch");
+    //     return -1;
+    // }
     return 0;
 }
 
@@ -240,7 +285,11 @@ int DeferStmt::visit_impl(SymTable& symtable) {
 }
 
 int ExprStmt::visit_impl(SymTable& symtable) {
-    return 0;
+    if (!expr) {
+        ERROR("expr in ExprStmt is null");
+        return -1;
+    }
+    return expr->visit(symtable);
 }
 
 int BreakStmt::visit_impl(SymTable& symtable) {
@@ -264,8 +313,7 @@ int BinaryExpr::visit_impl(SymTable& symtable) {
     TypeInfo* rtype = right->inferred_type;
     if (!ltype || !rtype) return -1;
 
-    // 比较运算符返回 bool
-    OpType op_type = (op) ? static_cast<Op*>(op_node)->op_type : OpType::INVALID;
+    OpType op_type = (op) ? static_cast<Op*>(op)->op_type : OpType::INVALID;
     switch (op_type) {
         case OpType::LESS:
         case OpType::GREATER:
@@ -286,29 +334,72 @@ int BinaryExpr::visit_impl(SymTable& symtable) {
 }
 
 int UnaryExpr::visit_impl(SymTable& symtable) {
+    if (!operand) return -1;
+    if (operand->visit(symtable) != 0) return -1;
+    TypeInfo* operand_type = operand->inferred_type;
+
+    OpType op_type = (op) ? static_cast<Op*>(op)->op_type : OpType::INVALID;
+    switch (op_type) {
+        case OpType::NOT:{
+            Arena* ar = symtable.get_symbol_arena();
+            inferred_type = ar->New<TypeInfo>();
+            inferred_type->kind = TypeInfo::Kind::Bool;
+            break;
+        }
+        case OpType::NEGATIVE:
+        case OpType::POSITIVE:
+            inferred_type = operand_type;
+            break;
+        case OpType::ADDRESS:{
+            Arena* ar = symtable.get_symbol_arena();
+            inferred_type = ar->New<TypeInfo>();
+            inferred_type->kind = TypeInfo::Kind::Pointer;
+            inferred_type->baseType = operand_type;
+            break;
+        }
+        case OpType::DEREF:
+            if (operand_type->kind == TypeInfo::Kind::Pointer && operand_type->baseType) {
+                inferred_type = operand_type->baseType;
+            } else {
+                ERROR("operand is not a pointer");
+                return -1;
+            }
+            break;
+        default:
+            return -1;
+    }
     return 0;
 }
 
 int CallExpr::visit_impl(SymTable& symtable) {
     if (!callee) return -1;
-    if (callee->visit(symtable) != 0) {
-        ERROR("Failed to analyze callee expression.");
-        return -1;
-    }
+    callee->visit(symtable);
     TypeInfo* calleeType = callee->inferred_type;
 
     if (!calleeType || calleeType->kind != TypeInfo::Kind::Function) {
-        ERROR("Callee is not a Function!");
+        ERROR("Attempting to call a non-function" << this->dump());
         return -1;
     }
+
+    std::vector<TypeInfo*> argTypes;
     for (auto* arg : arguments) {
         if (arg) {
-            if (arg->visit(symtable) != 0) {
-                ERROR("Failed to analyze arg symbol.");
-                return -1;
-            }
+            arg->visit(symtable);
+            argTypes.push_back(arg->inferred_type);
         }
     }
+
+    // if (argTypes.size() != calleeType->params.size()) {
+    //     ERROR("Argument count mismatch");
+    //     return -1;
+    // }
+    /* TODO: Check parameter signiture */
+    // for (size_t i = 0; i < argTypes.size(); ++i) {
+    //     if (!symtable.type_compatible(calleeType->params[i]->type, argTypes[i])) {
+    //         ERROR("Argument type mismatch");
+    //         return -1;
+    //     }
+    // }
     inferred_type = calleeType->returnType;
     return 0;
 }
@@ -348,11 +439,11 @@ int LiteralExpr::visit_impl(SymTable& symtable) {
     TypeInfo* t = ar->New<TypeInfo>();
     if (lit) {
         switch (lit->litType) {
-            case Literal::LitType::Int:    t->kind = TypeInfo::Kind::Int;
-            case Literal::LitType::Float:  t->kind = TypeInfo::Kind::Float;
-            case Literal::LitType::Bool:   t->kind = TypeInfo::Kind::Bool;
-            case Literal::LitType::String: t->kind = TypeInfo::Kind::String;
-            case Literal::LitType::Char:   t->kind = TypeInfo::Kind::Char;
+            case Literal::LitType::Int:    t->kind = TypeInfo::Kind::Int;    break;
+            case Literal::LitType::Float:  t->kind = TypeInfo::Kind::Float;  break;
+            case Literal::LitType::Bool:   t->kind = TypeInfo::Kind::Bool;   break;
+            case Literal::LitType::String: t->kind = TypeInfo::Kind::String; break;
+            case Literal::LitType::Char:   t->kind = TypeInfo::Kind::Char;   break;
         }
         inferred_type = t;
     }
@@ -360,6 +451,13 @@ int LiteralExpr::visit_impl(SymTable& symtable) {
 }
 
 int CastExpr::visit_impl(SymTable& symtable) {
+    if (type) {
+        type->visit(symtable);
+        inferred_type = type->inferred_type;
+    }
+    if (expr) {
+        expr->visit(symtable);
+    }
     return 0;
 }
 
@@ -368,7 +466,18 @@ int ArrayLiteralExpr::visit_impl(SymTable& symtable) {
 }
 
 int NewExpr::visit_impl(SymTable& symtable) {
-    return 0;
+    if (type) {
+        type->visit(symtable);
+        TypeInfo* target = type->inferred_type;
+        if (!target) return -1;
+
+        Arena* ar = symtable.get_symbol_arena();
+        inferred_type = ar->New<TypeInfo>();
+        inferred_type->kind = TypeInfo::Kind::Pointer;
+        inferred_type->baseType = target;
+        return 0;
+    }
+    return -1;
 }
 
 int LambdaExpr::visit_impl(SymTable& symtable) {
@@ -384,14 +493,36 @@ int RunExpr::visit_impl(SymTable& symtable) {
 }
 
 int NamedType::visit_impl(SymTable& symtable) {
+    Symbol* s = symtable.lookup(static_cast<Name*>(name)->name);
+    if (!s || s->kind != SymKind::Type) return -1;
+    inferred_type = s->type;
     return 0;
 }
 
 int PointerType::visit_impl(SymTable& symtable) {
-    return 0;
+    if (!baseType) {
+        return -1;
+    }
+    baseType->visit(symtable);
+    TypeInfo* base = baseType->inferred_type;
+    if (!base) return -1;
+    Arena* ar = symtable.get_symbol_arena();
+    inferred_type = ar->New<TypeInfo>();
+    inferred_type->kind = TypeInfo::Kind::Pointer;
+    inferred_type->baseType = base;
+    return 0;    
 }
 
 int ArrayType::visit_impl(SymTable& symtable) {
+    if (!elementType) return -1;
+    elementType->visit(symtable);
+    TypeInfo* elem = elementType->inferred_type;
+    if (!elem) return -1;
+    Arena* ar = symtable.get_symbol_arena();
+    inferred_type = ar->New<TypeInfo>();
+    inferred_type->kind = TypeInfo::Kind::Array;
+    /* TODO Evalute array size */
+    // inferred_type->arraySize = evaluate_size(sizeExpr);
     return 0;
 }
 

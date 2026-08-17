@@ -23,6 +23,7 @@ public:
     }
 
     int analyze(ASTNode* root) {
+        _symtable.add_builtin();
         return root->visit(_symtable);
     }
 };

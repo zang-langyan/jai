@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "semantic-analyzer.h"
 
 void repl() {
     Parser p;
@@ -48,6 +49,12 @@ int main(int argc, char** argv) {
     }
 
     ASTNode* ast = p.parse();
+    
+    SemanticAnalyzer semantic_analyzer;
+    Arena symbol_ar;
+    semantic_analyzer.set_symbol_arena(&symbol_ar);
+    semantic_analyzer.analyze(ast);
+    
     if (ast) {
         INFO("DUMPING AST");
         TRACE('\n' << ast->dump());

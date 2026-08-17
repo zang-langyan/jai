@@ -216,7 +216,7 @@ private:
             case OpType::BITAND:        res += "& (bit and)";           break;
             case OpType::LESSEQ:        res += "<= (less or equal)";    break;
             case OpType::GREATEREQ:     res += ">= (greater or equal)"; break;
-            case OpType::EQUAL:       res += "== (greater or equal)"; break;
+            case OpType::EQUAL:         res += "== (greater or equal)"; break;
             case OpType::UNEQUAL:       res += "!= (greater or equal)"; break;
             case OpType::RANGE:         res += ".. (range)";            break;
             default:                    res += "???";                   break;
@@ -293,6 +293,9 @@ private:
             init_label += "[Initializer]:\n";
             res += init_label + initializer->dump();
         }
+        if (symbol) {
+            res += symbol->dump() + '\n';
+        }
         return res;
     }
     virtual int visit_impl(SymTable& symtable) override;
@@ -320,6 +323,9 @@ private:
             std::string val_label(ASTContext::depth * 4, ' ');
             val_label += "[Value]:\n";
             res += val_label + value->dump();
+        }
+        if (symbol) {
+            res += symbol->dump() + '\n';
         }
         return res;
     }
@@ -363,6 +369,9 @@ private:
             body_label += "[Body]:\n";
             res += body_label + body->dump();
         }
+        if (symbol) {
+            res += symbol->dump() + '\n';
+        }
         return res;
     }
     virtual int visit_impl(SymTable& symtable) override;
@@ -391,6 +400,9 @@ private:
             for (auto* f : fields) {
                 if (f) res += f->dump();
             }
+        }
+        if (symbol) {
+            res += symbol->dump() + '\n';
         }
         return res;
     }
@@ -856,6 +868,9 @@ private:
         std::string res(ASTContext::depth * 4, ' ');
         res += "[IdentifierExpr]:\n";
         if (name) res += name->dump();
+        if (symbol) {
+            res += symbol->dump() + '\n';
+        }
         return res;
     }
     virtual int visit_impl(SymTable& symtable) override;
