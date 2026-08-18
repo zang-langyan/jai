@@ -42,7 +42,7 @@ classes = [
 ]
 
 return_type = 'int'
-method = 'visit_impl'
+method = 'visit_impl2'
 params = 'SymTable& symtable'
 with open('src/ast-impl.cpp', 'w') as f:
     f.write('''#include "ast.h"

@@ -92,8 +92,10 @@ int FuncDecl::visit_impl(SymTable& symtable) {
     funcSym->isBuiltin = false;
 
     TypeInfo* funcType = ar->New<TypeInfo>();
+    funcType->name = static_cast<Name*>(name)->name;
     funcType->kind = TypeInfo::Kind::Function;
 
+    funcType->name += "(";
     if (params) {
         CompoundStmts* paramList = static_cast<CompoundStmts*>(params);
         for (ASTNode* pnode : paramList->stmts) {
@@ -108,8 +110,10 @@ int FuncDecl::visit_impl(SymTable& symtable) {
                                   : nullptr;
             if (!paramType) {
                 paramType = ar->New<TypeInfo>();
+                paramType->name = "unknown, ";
                 paramType->kind = TypeInfo::Kind::Unknown;
             }
+            funcType->name += paramType->name + ", ";
 
             Symbol* paramSym = ar->New<Symbol>();
             paramSym->name = static_cast<Name*>(paramDecl->name)->name;
@@ -123,7 +127,8 @@ int FuncDecl::visit_impl(SymTable& symtable) {
             paramDecl->symbol = paramSym;
         }
     }
-
+    funcType->name += ")";
+    
     TypeInfo* retType = nullptr;
     if (returnType) {
         returnType->visit(symtable);
@@ -171,6 +176,11 @@ int StructDecl::visit_impl(SymTable& symtable) {
     struct_symbol->declNode = this;
     symbol = struct_symbol;
 
+    if (!symtable.insert(struct_symbol->name, struct_symbol)) {
+        ERROR("Failed to Insert Struct Decl " << struct_symbol->name);
+        return -1;
+    }
+
     TypeInfo* struct_type = ar->New<TypeInfo>();
     struct_type->kind = TypeInfo::Kind::Struct;
     struct_type->name = struct_symbol->name;
@@ -189,7 +199,7 @@ int StructDecl::visit_impl(SymTable& symtable) {
         struct_type->fields.push_back(field_symbol);
     }
 
-    return symtable.insert(struct_symbol->name, struct_symbol) ? 0 : -1;
+    return 0;
 }
 
 int UsingDecl::visit_impl(SymTable& symtable) {
@@ -473,6 +483,7 @@ int NewExpr::visit_impl(SymTable& symtable) {
 
         Arena* ar = symtable.get_symbol_arena();
         inferred_type = ar->New<TypeInfo>();
+        inferred_type->name = "*" + target->name;
         inferred_type->kind = TypeInfo::Kind::Pointer;
         inferred_type->baseType = target;
         return 0;
@@ -508,6 +519,7 @@ int PointerType::visit_impl(SymTable& symtable) {
     if (!base) return -1;
     Arena* ar = symtable.get_symbol_arena();
     inferred_type = ar->New<TypeInfo>();
+    inferred_type->name = "*" + base->name;
     inferred_type->kind = TypeInfo::Kind::Pointer;
     inferred_type->baseType = base;
     return 0;    

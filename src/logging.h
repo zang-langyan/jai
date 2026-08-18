@@ -48,6 +48,43 @@
 #define LOGSYSTEM_H
 
 #include <iostream>
+#include <sstream>
+#include <unordered_map>
+#include <vector>
+
+template<typename T>
+std::string ToString(const T& val) {
+    std::ostringstream oss;
+    oss << val;
+    return oss.str();
+}
+
+template<typename T>
+std::string ToString(const T*& val) {
+    return val->dump();
+}
+
+template<typename E>
+std::string ToString(const std::vector<E>& v) {
+    std::ostringstream oss;
+    for (size_t i = 0; i < v.size(); ++i) {
+        if (i > 0) {
+            oss << ", ";
+        }
+        oss << ToString(v[i]);
+    }
+    return oss.str();
+}
+
+template<typename K, typename V>
+std::string ToString(const std::unordered_map<K, V>& mp) {
+    std::ostringstream oss;
+    for (const auto& [k, v]: mp) {
+        oss << ToString(k) << ": " << ToString(v) << "\n";
+    }
+    return oss.str();
+}
+
 
 inline std::string operator ""_red(const char* message, size_t) {
     return "\033[1;31m" + std::string(message) + "\033[0m";

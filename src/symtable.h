@@ -41,6 +41,8 @@ struct TypeInfo {
     std::vector<Symbol*> fields;
 
     std::string dump();
+private:
+    bool _dumping = false; /* mark is during dumping */
 };
 
 struct Symbol {

@@ -24,7 +24,10 @@ public:
 
     int analyze(ASTNode* root) {
         _symtable.add_builtin();
-        return root->visit(_symtable);
+        if (root->visit(_symtable) != 0) {
+            return -1;
+        }
+        return root->visit2(_symtable);
     }
 };
 

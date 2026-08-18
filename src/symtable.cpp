@@ -1,8 +1,13 @@
 #include "symtable.h"
 #include "logging.h"
 #include <cstddef>
+#include <tuple>
 
 std::string TypeInfo::dump() {
+    if (_dumping) {
+        return "(TypeInfo: " + name + " [recursive])";
+    }
+    _dumping = true;
     std::string res = "(TypeInfo [" + name + "], [";
     switch (kind)
     {
@@ -39,6 +44,7 @@ std::string TypeInfo::dump() {
         break;
     }
     res += "])";
+    _dumping = false;
     return res;
 }
 
@@ -84,19 +90,39 @@ void SymTable::add_builtin() {
         Symbol* funcSym = _ar_symbol->New<Symbol>();
         TypeInfo* funcType = _ar_symbol->New<TypeInfo>();
         TypeInfo* returnType = _ar_symbol->New<TypeInfo>();
+        funcSym->name = name;
         funcSym->kind = SymKind::Function;
         funcSym->type = funcType;
         
+        funcType->name = name;
         funcType->kind = TypeInfo::Kind::Function;
         funcType->returnType = returnType;
         
         returnType->kind = TypeInfo::Kind::Void;
         insert(name, funcSym);
     }
+    std::vector<std::tuple<std::string, TypeInfo::Kind>> builtin_types {
+        {"s64", TypeInfo::Kind::Int},
+    };
+    for (const auto& [name, kind]: builtin_types) {
+        Symbol* typeSym = _ar_symbol->New<Symbol>();
+        TypeInfo* typeType = _ar_symbol->New<TypeInfo>();
+        typeSym->name = name;
+        typeSym->kind = SymKind::Type;
+        typeSym->type = typeType;
+        
+        typeType->name = name;
+        typeType->kind = kind;
+        
+        insert(name, typeSym);
+    }
 }
 
 bool SymTable::insert(const std::string& name, Symbol* symbol) {
-    if (_scopes.empty()) return false;
+    if (_scopes.empty()) {
+        ERROR("symtable is empty " << name);
+        return false;
+    }
     auto& scope = _scopes.back();
     auto& set = scope[name];
 
@@ -105,6 +131,7 @@ bool SymTable::insert(const std::string& name, Symbol* symbol) {
         set.push_back(symbol);
     } else {
         if (!set.empty()) {
+            ERROR(name << " is not empty in symtable" << ToString(_scopes));
             return false;
         }
         set.push_back(symbol);
