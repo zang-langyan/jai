@@ -38,6 +38,12 @@ int VariableDecl::visit_impl(SymTable& symtable) {
         typeAnnotation->visit(symtable); // Type Node fill in inferred_type
         declaredType = typeAnnotation->inferred_type;
     }
+
+    if (initType && initType->kind != TypeInfo::Kind::Unknown
+        && declaredType && declaredType->kind != TypeInfo::Kind::Unknown
+        && !sameType(initType, declaredType)) {
+        ERROR("VariableDecl Type mismatch: " << initType->dump() << " != " << declaredType->dump());
+    }
     TypeInfo* finalType = declaredType ? declaredType : initType;
     if (!finalType) {
         ERROR(
@@ -49,6 +55,7 @@ int VariableDecl::visit_impl(SymTable& symtable) {
         );
         return -1;
     }
+    inferred_type = finalType;
     Arena* ar = symtable.get_symbol_arena();
     Symbol* variable_symbol = ar->New<Symbol>();
     variable_symbol->name = std::string(
@@ -186,18 +193,18 @@ int StructDecl::visit_impl(SymTable& symtable) {
     struct_type->name = struct_symbol->name;
     struct_symbol->type = struct_type;
 
+    symtable.enterScope();
     for (VariableDecl* field : fields) {
         Symbol* field_symbol = ar->New<Symbol>();
         field_symbol->name = static_cast<Name*>(field->name)->name;
         field_symbol->kind = SymKind::Variable;
         field_symbol->declNode = field;
 
-        if (field->typeAnnotation) {
-            field->typeAnnotation->visit(symtable);
-            field_symbol->type = field->typeAnnotation->inferred_type;
-        }
+        field->visit(symtable);
+        field_symbol->type = field->typeAnnotation->inferred_type;
         struct_type->fields.push_back(field_symbol);
     }
+    symtable.exitScope();
 
     return 0;
 }
@@ -234,6 +241,7 @@ int ImportStmt::visit_impl(SymTable& symtable) {
     modSym->name = modName;
     modSym->kind = SymKind::Module;
     modSym->type = nullptr;
+    symbol = modSym;
     return symtable.insert(modSym->name, modSym) ? 0 : -1;
 }
 
@@ -276,7 +284,6 @@ int ForStmt::visit_impl(SymTable& symtable) {
 
 int ReturnStmt::visit_impl(SymTable& symtable) {
     if (!expr) {
-        // 返回 void
         return 0;
     }
     if (expr->visit(symtable) != 0) return -1;
@@ -339,8 +346,8 @@ int BinaryExpr::visit_impl(SymTable& symtable) {
         default:
             // TODO: check ltype and rtype compatibility
             inferred_type = ltype;
-            return 0;
     }
+    return 0;
 }
 
 int UnaryExpr::visit_impl(SymTable& symtable) {
@@ -476,19 +483,20 @@ int ArrayLiteralExpr::visit_impl(SymTable& symtable) {
 }
 
 int NewExpr::visit_impl(SymTable& symtable) {
-    if (type) {
-        type->visit(symtable);
-        TypeInfo* target = type->inferred_type;
-        if (!target) return -1;
-
-        Arena* ar = symtable.get_symbol_arena();
-        inferred_type = ar->New<TypeInfo>();
-        inferred_type->name = "*" + target->name;
-        inferred_type->kind = TypeInfo::Kind::Pointer;
-        inferred_type->baseType = target;
-        return 0;
+    if (!type) {
+        ERROR("Expect a type in New Expression!");
+        return -1;
     }
-    return -1;
+    type->visit(symtable);
+    TypeInfo* target = type->inferred_type;
+    if (!target) return -1;
+
+    Arena* ar = symtable.get_symbol_arena();
+    inferred_type = ar->New<TypeInfo>();
+    inferred_type->name = "*" + target->name;
+    inferred_type->kind = TypeInfo::Kind::Pointer;
+    inferred_type->baseType = target;
+    return 0;
 }
 
 int LambdaExpr::visit_impl(SymTable& symtable) {
@@ -505,18 +513,23 @@ int RunExpr::visit_impl(SymTable& symtable) {
 
 int NamedType::visit_impl(SymTable& symtable) {
     Symbol* s = symtable.lookup(static_cast<Name*>(name)->name);
-    if (!s || s->kind != SymKind::Type) return -1;
+    if (!s) return 0;
+    if (s->kind != SymKind::Type) {
+        ERROR("NAMED Type is not a Type identifier");
+        return -1;
+    }
     inferred_type = s->type;
     return 0;
 }
 
 int PointerType::visit_impl(SymTable& symtable) {
     if (!baseType) {
+        ERROR("base type is Null");
         return -1;
     }
     baseType->visit(symtable);
     TypeInfo* base = baseType->inferred_type;
-    if (!base) return -1;
+
     Arena* ar = symtable.get_symbol_arena();
     inferred_type = ar->New<TypeInfo>();
     inferred_type->name = "*" + base->name;
@@ -529,7 +542,7 @@ int ArrayType::visit_impl(SymTable& symtable) {
     if (!elementType) return -1;
     elementType->visit(symtable);
     TypeInfo* elem = elementType->inferred_type;
-    if (!elem) return -1;
+
     Arena* ar = symtable.get_symbol_arena();
     inferred_type = ar->New<TypeInfo>();
     inferred_type->kind = TypeInfo::Kind::Array;
@@ -539,6 +552,9 @@ int ArrayType::visit_impl(SymTable& symtable) {
 }
 
 int FunctionType::visit_impl(SymTable& symtable) {
+    Arena* ar = symtable.get_symbol_arena();
+    inferred_type = ar->New<TypeInfo>();
+    inferred_type->kind = TypeInfo::Kind::Function;
     return 0;
 }
 

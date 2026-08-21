@@ -27,6 +27,7 @@ public:
         if (root->visit(_symtable) != 0) {
             return -1;
         }
+        _symtable.resetToGlobal();
         return root->visit2(_symtable);
     }
 };

@@ -70,6 +70,16 @@ std::string Symbol::dump() {
     return res;
 }
 
+bool sameType(TypeInfo* t1, TypeInfo* t2) {
+    // TODO
+    return true;
+}
+
+bool convertableType(TypeInfo* t1, TypeInfo* t2) {
+    // TODO
+    return true;
+}
+
 void SymTable::enterScope() {
     _scopes.emplace_back();
 }
@@ -79,6 +89,7 @@ void SymTable::exitScope() {
         return;
     }
     _scopes.pop_back();
+    _current_function_return_type = nullptr;
 }
 
 void SymTable::add_builtin() {
@@ -131,7 +142,7 @@ bool SymTable::insert(const std::string& name, Symbol* symbol) {
         set.push_back(symbol);
     } else {
         if (!set.empty()) {
-            ERROR(name << " is not empty in symtable" << ToString(_scopes));
+            ERROR(name << " is not empty in symtable\n" << ToString(_scopes));
             return false;
         }
         set.push_back(symbol);
@@ -164,6 +175,27 @@ Symbol* SymTable::lookupLocal(const std::string& name) {
     return nullptr;
 }
 
+Symbol* SymTable::lookupOverload(const std::string& name,
+                                 const std::vector<TypeInfo*>& sig) {
+    for (int i = _scopes.size() - 1; i >= 0; --i) {
+        auto it = _scopes[i].find(name);
+        if (it == _scopes[i].end()) continue;
+        for (Symbol* sym : it->second) {
+            if (sym->kind != SymKind::Function || !sym->type) continue;
+            if (sym->type->params.size() != sig.size()) continue;
+            bool match = true;
+            for (size_t j = 0; j < sig.size(); ++j) {
+                if (!sameType(sym->type->params[j]->type, sig[j])) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return sym;
+        }
+    }
+    return nullptr;
+}
+
 SymTable::Scope* SymTable::globalScope() {
     if (_scopes.empty()) {
         ERROR("_scopes is empty, failed to get global scope.");
@@ -176,3 +208,18 @@ void SymTable::resetToGlobal() {
     _scopes.resize(1);
 }
 
+void SymTable::reset() {
+    _scopes.resize(0);
+}
+
+int SymTable::getScopeLevel() {
+    return _scopes.size() - 1;
+}
+
+void SymTable::set_current_function_return_type(TypeInfo* type) {
+    _current_function_return_type = type;
+}
+
+TypeInfo* SymTable::get_current_function_return_type() {
+    return _current_function_return_type;
+}

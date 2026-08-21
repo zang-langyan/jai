@@ -497,6 +497,7 @@ class ImportStmt: public ASTNode {
 public:
     ASTNode* import_name;
 
+    Symbol* symbol;
     ImportStmt(): ASTNode(ASTNodeType::ImportStmt) {}
 private:
     virtual std::string dump_impl() override {

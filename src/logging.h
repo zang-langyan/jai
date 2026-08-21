@@ -69,7 +69,7 @@ std::string ToString(const std::vector<E>& v) {
     std::ostringstream oss;
     for (size_t i = 0; i < v.size(); ++i) {
         if (i > 0) {
-            oss << ", ";
+            oss << "\n";
         }
         oss << ToString(v[i]);
     }

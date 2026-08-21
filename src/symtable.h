@@ -31,6 +31,7 @@ struct TypeInfo {
     TypeInfo* baseType = nullptr;
 
     // for array
+    TypeInfo* elemType = nullptr;
     size_t arraySize = 0;
 
     // for function
@@ -44,6 +45,9 @@ struct TypeInfo {
 private:
     bool _dumping = false; /* mark is during dumping */
 };
+
+bool sameType(TypeInfo* t1, TypeInfo* t2);
+bool convertableType(TypeInfo* t1, TypeInfo* t2);
 
 struct Symbol {
     std::string name;
@@ -94,6 +98,9 @@ public:
 
     bool insert(const std::string& name, Symbol* symbol);
 
+    void set_current_function_return_type(TypeInfo*);
+    TypeInfo* get_current_function_return_type();
+
     Symbol* lookup(const std::string& name);
 
     Symbol* lookupLocal(const std::string& name);
@@ -103,10 +110,17 @@ public:
     Scope* globalScope();
 
     void resetToGlobal();
+    void reset();
 
     void add_builtin();
+    int getScopeLevel();
+
+    const std::vector<Scope>& get_environments() const {
+        return _scopes;
+    };
 private:
     std::vector<Scope> _scopes;
+    TypeInfo* _current_function_return_type = nullptr;
 };
 
 #endif
