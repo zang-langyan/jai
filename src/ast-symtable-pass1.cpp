@@ -65,6 +65,7 @@ int VariableDecl::visit_impl(SymTable& symtable) {
     variable_symbol->kind = SymKind::Variable;
     variable_symbol->type = finalType;
     variable_symbol->isMutable = true;
+    variable_symbol->scopeLevel = symtable.getScopeLevel();
     variable_symbol->declNode = this;
     symbol = variable_symbol;
     return symtable.insert(variable_symbol->name, variable_symbol) ? 0 : -1;
@@ -83,6 +84,7 @@ int ConstantDecl::visit_impl(SymTable& symtable) {
     const_symbol->type = type;
     const_symbol->isMutable = false;
     const_symbol->isCompileTime = true;
+    const_symbol->scopeLevel = symtable.getScopeLevel();
     const_symbol->declNode = this;
 
     symbol = const_symbol;
@@ -95,6 +97,7 @@ int FuncDecl::visit_impl(SymTable& symtable) {
     Symbol* funcSym = ar->New<Symbol>();
     funcSym->name = static_cast<Name*>(name)->name;
     funcSym->kind = SymKind::Function;
+    funcSym->scopeLevel = symtable.getScopeLevel();
     funcSym->declNode = this;
     funcSym->isBuiltin = false;
 
@@ -180,6 +183,7 @@ int StructDecl::visit_impl(SymTable& symtable) {
     Symbol* struct_symbol = ar->New<Symbol>();
     struct_symbol->name = static_cast<Name*>(name)->name;
     struct_symbol->kind = SymKind::Type;
+    struct_symbol->scopeLevel = symtable.getScopeLevel();
     struct_symbol->declNode = this;
     symbol = struct_symbol;
 
@@ -241,6 +245,8 @@ int ImportStmt::visit_impl(SymTable& symtable) {
     modSym->name = modName;
     modSym->kind = SymKind::Module;
     modSym->type = nullptr;
+    modSym->scopeLevel = symtable.getScopeLevel();
+    modSym->declNode = this;
     symbol = modSym;
     return symtable.insert(modSym->name, modSym) ? 0 : -1;
 }
@@ -461,6 +467,7 @@ int LiteralExpr::visit_impl(SymTable& symtable) {
             case Literal::LitType::Bool:   t->kind = TypeInfo::Kind::Bool;   break;
             case Literal::LitType::String: t->kind = TypeInfo::Kind::String; break;
             case Literal::LitType::Char:   t->kind = TypeInfo::Kind::Char;   break;
+            case Literal::LitType::JNull:  t->kind = TypeInfo::Kind::JNull;   break;
         }
         inferred_type = t;
     }

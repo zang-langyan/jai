@@ -33,6 +33,7 @@
     ASTNode* bitwise_or();
     ASTNode* bitwise_xor();
     ASTNode* bitwise_and();
+    ASTNode* relational_expr();
     ASTNode* shift_expr();
     ASTNode* additive_expr();
     ASTNode* multiplicative_expr();

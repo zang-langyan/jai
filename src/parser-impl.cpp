@@ -122,6 +122,11 @@ ASTNode* Parser::literal_rule() {
     ) {
         res->litType = Literal::LitType::Bool;
         res->boolVal = false;
+    } else if (
+        (t = expect(TokenType::JNULL))
+        && (res || (res = _ast_ar->New<Literal>()))
+    ) {
+        res->litType = Literal::LitType::JNull;
     } else {
         // dumpTokens(_toks);
     }
@@ -857,19 +862,61 @@ ASTNode* Parser::bitwise_and(){
     ASTNode* op    = nullptr;
     ASTNode* right = nullptr;
     if (
-        (left = shift_expr())
+        (left = relational_expr())
     ) {
         while (true) {
             size_t mm = _mark;
             if (
                 (op = op_rule(TokenType::AMPER, OpType::BITAND))
-                && (right = shift_expr())
+                && (right = relational_expr())
             ) {
                 BinaryExpr* a = _ast_ar->New<BinaryExpr>();
                 a->left = left;
                 a->op = op;
                 a->right = right;
                 left = a;
+                continue;
+            } else {
+                _mark = mm;
+                break;
+            }
+        }
+        res = left;
+        DBPRINT(res->dump());
+        return res;
+    }
+    _mark = m;
+    return nullptr;
+}
+
+ASTNode* Parser::relational_expr() {
+    ASTNode* res = nullptr;
+    size_t m = _mark;
+    ASTNode* left = nullptr;
+    ASTNode* op = nullptr;
+    ASTNode* right = nullptr;
+
+    if ((left = shift_expr())) {
+        while (true) {
+            size_t mm = _mark;
+            if (
+                (op = op_rule(TokenType::LESS, OpType::LESS))
+                || (op = op_rule(TokenType::GREATER, OpType::GREATER))
+                || (op = op_rule(TokenType::LESSEQ, OpType::LESSEQ))
+                || (op = op_rule(TokenType::GREATEREQ, OpType::GREATEREQ))
+                || (op = op_rule(TokenType::EQEQUAL, OpType::EQUAL))
+                || (op = op_rule(TokenType::UNEQUAL, OpType::UNEQUAL))
+            ) {
+                right = shift_expr();
+                if (!right) {
+                    _mark = mm;
+                    break;
+                }
+                BinaryExpr* bin = _ast_ar->New<BinaryExpr>();
+                bin->left = left;
+                bin->op = op;
+                bin->right = right;
+                left = bin;
                 continue;
             } else {
                 _mark = mm;

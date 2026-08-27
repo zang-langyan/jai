@@ -364,6 +364,7 @@ int Lexer::getNextToken(Token* tok) {
             else if (strcmp(name, "continue") == 0)  tok_type = TokenType::CONTINUE;
             else if (strcmp(name, "cast") == 0)  tok_type = TokenType::CAST;
             else if (strcmp(name, "New") == 0)  tok_type = TokenType::NEW;
+            else if (strcmp(name, "null") == 0)  tok_type = TokenType::JNULL;
             else tok_type = TokenType::Identifier;
 
             MAKETOKENSTR(tok_type, name, len);

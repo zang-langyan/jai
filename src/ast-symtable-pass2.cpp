@@ -153,12 +153,15 @@ int FuncDecl::visit_impl2(SymTable& symtable) {
             }
         }
     }
+    
+    TypeInfo* oldRetType = symtable.get_current_function_return_type();
     symtable.set_current_function_return_type(funcType->returnType);
     if (body) {
         body->visit2(symtable);
     }
 
     symtable.exitScope();
+    symtable.set_current_function_return_type(oldRetType);
     return 0;
 }
 
@@ -259,6 +262,9 @@ int ForStmt::visit_impl2(SymTable& symtable) {
 
 int ReturnStmt::visit_impl2(SymTable& symtable) {
     TypeInfo* retType = symtable.get_current_function_return_type();
+    if (!retType) {
+        ERROR("return type is null" << retType);
+    }
     if (!expr) {
         if (retType->kind != TypeInfo::Kind::Void) {
             ERROR("current function need to return something " << retType->dump());
@@ -269,7 +275,7 @@ int ReturnStmt::visit_impl2(SymTable& symtable) {
     if (expr->visit2(symtable) != 0) return -1;
 
     if (!retType || !sameType(retType, expr->inferred_type)) {
-        ERROR("Failed to get return Type or Return type mismatch");
+        ERROR("Failed to get return Type or Return type mismatch" << this->dump());
         return -1;
     }
     return 0;

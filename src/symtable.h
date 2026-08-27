@@ -22,7 +22,7 @@ enum class SymKind {
 
 struct TypeInfo {
     enum class Kind {
-        Void, Int, Float, Bool, String, Char, Pointer, Array, Struct, Function, Unknown
+        Void, JNull, Int, Float, Bool, String, Char, Pointer, Array, Struct, Function, Unknown
     };
     Kind kind = Kind::Unknown;
     std::string name{};

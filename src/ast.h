@@ -97,10 +97,16 @@ public:
     int visit2(SymTable& symtable) {
         return visit_impl2(symtable);
     }
+
+    template<typename T>
+    T* codegen() {
+        return static_cast<T*>(codegen_impl());
+    }
 private:
     virtual std::string dump_impl() { return ""; };
     virtual int visit_impl(SymTable& symtable) = 0;
     virtual int visit_impl2(SymTable& symtable) = 0;
+    virtual void* codegen_impl() = 0;
 };
 
 /* Root Ast */
@@ -119,6 +125,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class Interactive : public ASTNode {
@@ -136,6 +143,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 /* Atom*/
@@ -158,6 +166,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 enum class OpType {
@@ -233,10 +242,11 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 struct Literal: public ASTNode {
-    enum class LitType { Int, Float, Bool, String, Char };
+    enum class LitType { Int, Float, Bool, String, Char, JNull };
     LitType litType;
     union {
         int64_t  intVal;
@@ -259,12 +269,14 @@ private:
             case LitType::Bool:   res += "[BOOL] " + (boolVal ? std::string("true") : std::string("false")); break;
             case LitType::Char:   res += "[BOOL] '" + std::string(1, (char)intVal) + "'"; break;
             case LitType::String: res += "[STRING] \"" + escapeString(stringVal.s, stringVal.len) + "\""; break;
+            case LitType::JNull:  res += "[JNULL]"; break;
         }
         res += "\n";
         return res;
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 /* Declaration Ast */
@@ -309,6 +321,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ConstantDecl : public ASTNode {
@@ -341,6 +354,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class FuncDecl : public ASTNode {
@@ -387,6 +401,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class StructDecl : public ASTNode {
@@ -420,6 +435,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class UsingDecl : public ASTNode {
@@ -436,6 +452,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 /* Statement Ast */
@@ -455,6 +472,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class SingleStmt: public ASTNode {
@@ -473,6 +491,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class BlockStmt : public ASTNode {
@@ -491,6 +510,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ImportStmt: public ASTNode {
@@ -508,6 +528,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class IfStmt : public ASTNode {
@@ -543,6 +564,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class WhileStmt : public ASTNode {
@@ -571,6 +593,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ForStmt : public ASTNode {
@@ -613,6 +636,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ReturnStmt : public ASTNode {
@@ -637,6 +661,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class DeferStmt : public ASTNode {
@@ -653,6 +678,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ExprStmt : public ASTNode {
@@ -669,6 +695,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class BreakStmt : public ASTNode {
@@ -682,6 +709,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ContinueStmt : public ASTNode {
@@ -695,6 +723,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 enum class CompileStmtType {
@@ -734,6 +763,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 /* Expression Ast */
@@ -770,6 +800,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class UnaryExpr : public ASTNode {
@@ -799,6 +830,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class CallExpr : public ASTNode {
@@ -830,6 +862,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class IndexExpr : public ASTNode {
@@ -858,6 +891,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class MemberAccessExpr : public ASTNode {
@@ -886,6 +920,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class IdentifierExpr : public ASTNode {
@@ -908,6 +943,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class LiteralExpr : public ASTNode {
@@ -924,6 +960,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class CastExpr : public ASTNode {
@@ -953,6 +990,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ArrayLiteralExpr : public ASTNode {
@@ -979,6 +1017,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class NewExpr : public ASTNode {
@@ -1000,6 +1039,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class LambdaExpr : public ASTNode {
@@ -1047,6 +1087,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class IfExpr : public ASTNode {
@@ -1082,6 +1123,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class RunExpr : public ASTNode {
@@ -1098,6 +1140,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 /* Type Annotation */
@@ -1115,6 +1158,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class PointerType : public ASTNode {
@@ -1131,6 +1175,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class ArrayType : public ASTNode {
@@ -1159,6 +1204,7 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 
 class FunctionType : public ASTNode {
@@ -1190,5 +1236,6 @@ private:
     }
     virtual int visit_impl(SymTable& symtable) override;
     virtual int visit_impl2(SymTable& symtable) override;
+    virtual void* codegen_impl() override;
 };
 #endif

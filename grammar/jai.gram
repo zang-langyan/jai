@@ -79,7 +79,8 @@ logical_or: logical_and ('||' logical_and)*
 logical_and: bitwise_or ('&&' bitwise_or)*
 bitwise_or: bitwise_xor ('|' bitwise_xor)*
 bitwise_xor: bitwise_and ('^' bitwise_and)*
-bitwise_and: shift_expr ('&' shift_expr)*
+bitwise_and: relational_expr ('&' relational_expr)*
+relational_expr: shift_expr (('>' | '<' | '>=' | '<=' | '==' | '!=') shift_expr)*
 shift_expr: additive_expr (('<<' | '>>') additive_expr)*
 additive_expr: multiplicative_expr (('+' | '-') multiplicative_expr)*
 multiplicative_expr: unary_expr (('*' | '/' | '%') unary_expr)*

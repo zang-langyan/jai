@@ -12,6 +12,7 @@ std::string TypeInfo::dump() {
     switch (kind)
     {
     case Kind::Void:     res += "Void";      break;
+    case Kind::JNull:    res += "Null";      break;
     case Kind::Int:      res += "Int";       break;
     case Kind::Float:    res += "Float";     break;
     case Kind::Bool:     res += "Bool";      break;
@@ -89,7 +90,6 @@ void SymTable::exitScope() {
         return;
     }
     _scopes.pop_back();
-    _current_function_return_type = nullptr;
 }
 
 void SymTable::add_builtin() {
@@ -104,6 +104,7 @@ void SymTable::add_builtin() {
         funcSym->name = name;
         funcSym->kind = SymKind::Function;
         funcSym->type = funcType;
+        funcSym->isBuiltin = true;
         
         funcType->name = name;
         funcType->kind = TypeInfo::Kind::Function;
@@ -114,6 +115,11 @@ void SymTable::add_builtin() {
     }
     std::vector<std::tuple<std::string, TypeInfo::Kind>> builtin_types {
         {"s64", TypeInfo::Kind::Int},
+        {"float", TypeInfo::Kind::Float},
+        {"bool", TypeInfo::Kind::Bool},
+        {"string", TypeInfo::Kind::String},
+        {"char", TypeInfo::Kind::Char},
+        {"void", TypeInfo::Kind::Void},
     };
     for (const auto& [name, kind]: builtin_types) {
         Symbol* typeSym = _ar_symbol->New<Symbol>();
@@ -121,6 +127,7 @@ void SymTable::add_builtin() {
         typeSym->name = name;
         typeSym->kind = SymKind::Type;
         typeSym->type = typeType;
+        typeSym->isBuiltin = true;
         
         typeType->name = name;
         typeType->kind = kind;

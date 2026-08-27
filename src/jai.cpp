@@ -1,5 +1,7 @@
 #include "parser.h"
 #include "semantic-analyzer.h"
+#include "ast.h"
+#include "llvmj.h"
 
 void repl() {
     Parser p;
@@ -61,5 +63,10 @@ int main(int argc, char** argv) {
     } else {
         ERROR("ast is null");
     }
+
+    ast->codegen<llvm::Value>();
+    LLVMJ::instance().getModule().print(llvm::errs(), nullptr);
+
+    LLVMJ::instance().execute();
     return 0;
 }

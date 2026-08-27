@@ -79,6 +79,7 @@ enum TokenType {
     TDOT,                  /* ... */
     
     /* Others */
+    JNULL,
     COMMENT,
     NEWLINE,               /* New Line*/
     ENDOFFILE,             /* End of File */
