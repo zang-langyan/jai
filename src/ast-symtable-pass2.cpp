@@ -467,6 +467,10 @@ int ArrayLiteralExpr::visit_impl2(SymTable& symtable) {
     }
     inferred_type->name = eType->name + "[](array)";
     inferred_type->elemType = eType;
+
+    for (ASTNode* e: elements) {
+        e->visit2(symtable);
+    }
     return 0;
 }
 

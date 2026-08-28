@@ -487,6 +487,10 @@ int ArrayLiteralExpr::visit_impl(SymTable& symtable) {
     inferred_type->kind = TypeInfo::Kind::Array;
     inferred_type->elemType = eType;
     inferred_type->arraySize = elements.size();
+
+    for (ASTNode* e: elements) {
+        e->visit(symtable);
+    }
     return 0;
 }
 
