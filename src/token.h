@@ -30,7 +30,7 @@ enum TokenType {
     NEW,                 /* New */
 
     // ...
-    
+
     /* One char */
     LPAR,                  /* ( */
     RPAR,                  /* ) */
@@ -79,7 +79,7 @@ enum TokenType {
     TDOT,                  /* ... */
     
     /* Others */
-    JNULL,
+    JNULL,                 /* null */
     COMMENT,
     NEWLINE,               /* New Line*/
     ENDOFFILE,             /* End of File */

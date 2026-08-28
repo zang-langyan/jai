@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "symtable.h"
 
 int Module::visit_impl(SymTable& symtable) {
     if (statements) {
@@ -39,23 +40,10 @@ int VariableDecl::visit_impl(SymTable& symtable) {
         declaredType = typeAnnotation->inferred_type;
     }
 
-    if (initType && initType->kind != TypeInfo::Kind::Unknown
-        && declaredType && declaredType->kind != TypeInfo::Kind::Unknown
-        && !sameType(initType, declaredType)) {
-        ERROR("VariableDecl Type mismatch: " << initType->dump() << " != " << declaredType->dump());
-    }
     TypeInfo* finalType = declaredType ? declaredType : initType;
-    if (!finalType) {
-        ERROR(
-            "Cannot infer type for Variable Declaration: " 
-            << std::string(
-                static_cast<Name*>(name)->name, 
-                static_cast<Name*>(name)->len
-            )
-        );
-        return -1;
+    if (finalType) {
+        inferred_type = finalType;
     }
-    inferred_type = finalType;
     Arena* ar = symtable.get_symbol_arena();
     Symbol* variable_symbol = ar->New<Symbol>();
     variable_symbol->name = std::string(
@@ -428,6 +416,13 @@ int CallExpr::visit_impl(SymTable& symtable) {
 }
 
 int IndexExpr::visit_impl(SymTable& symtable) {
+    if (!base) {
+        ERROR("base is null" << this->dump());
+        return -1;
+    }
+    base->visit(symtable);
+    inferred_type = base->inferred_type;
+    index->visit(symtable);
     return 0;
 }
 
@@ -458,19 +453,10 @@ int IdentifierExpr::visit_impl(SymTable& symtable) {
 }
 
 int LiteralExpr::visit_impl(SymTable& symtable) {
-    Arena* ar = symtable.get_symbol_arena();
-    TypeInfo* t = ar->New<TypeInfo>();
-    if (lit) {
-        switch (lit->litType) {
-            case Literal::LitType::Int:    t->kind = TypeInfo::Kind::Int;    break;
-            case Literal::LitType::Float:  t->kind = TypeInfo::Kind::Float;  break;
-            case Literal::LitType::Bool:   t->kind = TypeInfo::Kind::Bool;   break;
-            case Literal::LitType::String: t->kind = TypeInfo::Kind::String; break;
-            case Literal::LitType::Char:   t->kind = TypeInfo::Kind::Char;   break;
-            case Literal::LitType::JNull:  t->kind = TypeInfo::Kind::JNull;   break;
-        }
-        inferred_type = t;
+    if (!lit) {
+        ERROR("Literal is Null!");
     }
+    inferred_type = makeLiteralType(symtable, lit->litType);
     return 0;
 }
 
@@ -486,6 +472,21 @@ int CastExpr::visit_impl(SymTable& symtable) {
 }
 
 int ArrayLiteralExpr::visit_impl(SymTable& symtable) {
+    if (!type) {
+        ERROR("Expect a type in array literal expr");
+    }
+    type->visit(symtable);
+    TypeInfo* eType = type->inferred_type;
+    if (!eType) {
+        ERROR("Fail to create eType");
+        return -1;
+    }
+    Arena* ar = symtable.get_symbol_arena();
+    inferred_type = ar->New<TypeInfo>();
+    inferred_type->name = eType->name + "[](array)";
+    inferred_type->kind = TypeInfo::Kind::Array;
+    inferred_type->elemType = eType;
+    inferred_type->arraySize = elements.size();
     return 0;
 }
 
@@ -498,11 +499,7 @@ int NewExpr::visit_impl(SymTable& symtable) {
     TypeInfo* target = type->inferred_type;
     if (!target) return -1;
 
-    Arena* ar = symtable.get_symbol_arena();
-    inferred_type = ar->New<TypeInfo>();
-    inferred_type->name = "*" + target->name;
-    inferred_type->kind = TypeInfo::Kind::Pointer;
-    inferred_type->baseType = target;
+    inferred_type = makePointerType(symtable, target);
     return 0;
 }
 
@@ -537,11 +534,7 @@ int PointerType::visit_impl(SymTable& symtable) {
     baseType->visit(symtable);
     TypeInfo* base = baseType->inferred_type;
 
-    Arena* ar = symtable.get_symbol_arena();
-    inferred_type = ar->New<TypeInfo>();
-    inferred_type->name = "*" + base->name;
-    inferred_type->kind = TypeInfo::Kind::Pointer;
-    inferred_type->baseType = base;
+    inferred_type = makePointerType(symtable, base);
     return 0;    
 }
 

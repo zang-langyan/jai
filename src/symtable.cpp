@@ -1,7 +1,10 @@
 #include "symtable.h"
+#include "ast.h"
 #include "logging.h"
 #include <cstddef>
+#include <string>
 #include <tuple>
+#include <unordered_map>
 
 std::string TypeInfo::dump() {
     if (_dumping) {
@@ -19,7 +22,12 @@ std::string TypeInfo::dump() {
     case Kind::String:   res += "String";    break;
     case Kind::Char:     res += "Char";      break;
     case Kind::Pointer:  res += "Pointer of Base Type " + baseType->dump();   break;
-    case Kind::Array:    res += "Array";     break;
+    case Kind::Array:    {
+        res += "Array";
+        res += elemType->dump();
+        res += "[" + std::to_string(arraySize) + "]";
+        break;
+    }
     case Kind::Struct:   {
         res += "Struct";
         for (auto* f: fields) {
@@ -81,6 +89,41 @@ bool convertableType(TypeInfo* t1, TypeInfo* t2) {
     return true;
 }
 
+TypeInfo* makeLiteralType(SymTable& symtable, LitType litType) {
+    static std::unordered_map<LitType, TypeInfo*> mp;
+    auto it = mp.find(litType);
+    if (it != mp.end()) {
+        return it->second;
+    }
+    Arena* ar = symtable.get_symbol_arena();
+    TypeInfo* t = ar->New<TypeInfo>();
+    switch (litType) {
+        case LitType::Int:    t->kind = TypeInfo::Kind::Int;    break;
+        case LitType::Float:  t->kind = TypeInfo::Kind::Float;  break;
+        case LitType::Bool:   t->kind = TypeInfo::Kind::Bool;   break;
+        case LitType::String: t->kind = TypeInfo::Kind::String; break;
+        case LitType::Char:   t->kind = TypeInfo::Kind::Char;   break;
+        case LitType::JNull:  t->kind = TypeInfo::Kind::JNull;  break;
+    }
+    return t;
+}
+
+TypeInfo* makePointerType(SymTable& symtable, TypeInfo* base) {
+    static std::unordered_map<TypeInfo*, TypeInfo*> mp;
+    auto it = mp.find(base);
+    if (it != mp.end()) {
+        return it->second;
+    }
+
+    Arena* ar = symtable.get_symbol_arena();
+    TypeInfo* ptr_of_t = ar->New<TypeInfo>();
+    ptr_of_t->name = "*" + base->name;
+    ptr_of_t->kind = TypeInfo::Kind::Pointer;
+    ptr_of_t->baseType = base;
+    mp[base] = ptr_of_t;
+    return ptr_of_t;
+}
+
 void SymTable::enterScope() {
     _scopes.emplace_back();
 }
@@ -114,6 +157,7 @@ void SymTable::add_builtin() {
         insert(name, funcSym);
     }
     std::vector<std::tuple<std::string, TypeInfo::Kind>> builtin_types {
+        {"int", TypeInfo::Kind::Int},
         {"s64", TypeInfo::Kind::Int},
         {"float", TypeInfo::Kind::Float},
         {"bool", TypeInfo::Kind::Bool},

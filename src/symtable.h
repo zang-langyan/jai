@@ -8,8 +8,10 @@
 #include <unordered_map>
 
 class ASTNode;
+enum class LitType;
 class VariableDecl;
 struct Symbol;
+class SymTable;
 
 enum class SymKind {
     Module,
@@ -48,6 +50,9 @@ private:
 
 bool sameType(TypeInfo* t1, TypeInfo* t2);
 bool convertableType(TypeInfo* t1, TypeInfo* t2);
+
+TypeInfo* makeLiteralType(SymTable& symtable, LitType litType);
+TypeInfo* makePointerType(SymTable& symtable, TypeInfo* base);
 
 struct Symbol {
     std::string name;

@@ -31,11 +31,9 @@ void repl() {
 }
 
 int main(int argc, char** argv) {
-    // repl();
-    // return 0;
     if (argc < 2) {
-        fputs("provide a input file\n",stderr);
-        exit(1);
+        repl();
+        return 0;
     }
 
     FILE *fp;
@@ -64,9 +62,10 @@ int main(int argc, char** argv) {
         ERROR("ast is null");
     }
 
+    LLVMJ::instance().getModule().setModuleIdentifier(argv[1]);
+    LLVMJ::instance().getModule().setSourceFileName(argv[1]);
     ast->codegen<llvm::Value>();
     LLVMJ::instance().getModule().print(llvm::errs(), nullptr);
-
     LLVMJ::instance().execute();
     return 0;
 }

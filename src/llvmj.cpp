@@ -39,7 +39,7 @@ llvm::Type* LLVMJ::toLLVMType(TypeInfo* type) {
             return st;
         }
         case TypeInfo::Kind::Array:
-            return llvm::ArrayType::get(toLLVMType(type->baseType), type->arraySize);
+            return llvm::ArrayType::get(toLLVMType(type->elemType), type->arraySize);
         case TypeInfo::Kind::Function: {
             if (_cg.getFunctionTypeRecord().find(type) != _cg.getFunctionTypeRecord().end()) {
                 return (llvm::Type*)_cg.getFunctionTypeRecord()[type];

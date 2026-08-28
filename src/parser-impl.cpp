@@ -90,43 +90,43 @@ ASTNode* Parser::literal_rule() {
         (t = expect(TokenType::ILiteral))
         && (res || (res = _ast_ar->New<Literal>()))
     ) {
-        res->litType = Literal::LitType::Int;
+        res->litType = LitType::Int;
         res->intVal = t->data.intValue;
     } else if (
         (t = expect(TokenType::FLiteral))
         && (res || (res = _ast_ar->New<Literal>()))
     ) {
-        res->litType = Literal::LitType::Float;
+        res->litType = LitType::Float;
         res->floatVal = t->data.floatValue;
     } else if (
         (t = expect(TokenType::CLiteral))
         && (res || (res = _ast_ar->New<Literal>()))
     ) {
-        res->litType = Literal::LitType::Char;
+        res->litType = LitType::Char;
         res->intVal = t->data.intValue;
     } else if (
         (t = expect(TokenType::SLiteral))
         && (res || (res = _ast_ar->New<Literal>()))
     ) {
-        res->litType = Literal::LitType::String;
+        res->litType = LitType::String;
         res->stringVal = {.s = t->data.lexeme, .len = t->length};
     } else if (
         (t = expect(TokenType::TRUE))
         && (res || (res = _ast_ar->New<Literal>()))
     ) {
-        res->litType = Literal::LitType::Bool;
+        res->litType = LitType::Bool;
         res->boolVal = true;
     } else if (
         (t = expect(TokenType::FALSE))
         && (res || (res = _ast_ar->New<Literal>()))
     ) {
-        res->litType = Literal::LitType::Bool;
+        res->litType = LitType::Bool;
         res->boolVal = false;
     } else if (
         (t = expect(TokenType::JNULL))
         && (res || (res = _ast_ar->New<Literal>()))
     ) {
-        res->litType = Literal::LitType::JNull;
+        res->litType = LitType::JNull;
     } else {
         // dumpTokens(_toks);
     }
@@ -199,7 +199,7 @@ ASTNode* Parser::import_stmt(){
         && expect(TokenType::IMPORT)
         && (
             (s = static_cast<Literal*>(literal_rule())) && 
-            s->litType == Literal::LitType::String
+            s->litType == LitType::String
         )
         && expect(TokenType::SEMI)
         && (res || (res = _ast_ar->New<ImportStmt>()))
@@ -1166,6 +1166,13 @@ ASTNode* Parser::primary_expr(){
     ASTNode* a = nullptr;
     ASTNode* b = nullptr;
     if (
+        (res = array_literal())
+    ){
+        DBPRINT(res->dump());
+        return res;
+    }
+    _mark = m;
+    if (
         (a = name_rule())
         && (res || (res = _ast_ar->New<IdentifierExpr>()))
     ){
@@ -1228,13 +1235,6 @@ ASTNode* Parser::primary_expr(){
     _mark = m;
     if (
         (res = if_expr())
-    ){
-        DBPRINT(res->dump());
-        return res;
-    }
-    _mark = m;
-    if (
-        (res = array_literal())
     ){
         DBPRINT(res->dump());
         return res;

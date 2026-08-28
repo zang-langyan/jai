@@ -245,8 +245,8 @@ private:
     virtual void* codegen_impl() override;
 };
 
+enum class LitType { Int, Float, Bool, String, Char, JNull };
 struct Literal: public ASTNode {
-    enum class LitType { Int, Float, Bool, String, Char, JNull };
     LitType litType;
     union {
         int64_t  intVal;
@@ -1004,6 +1004,13 @@ private:
     virtual std::string dump_impl() override {
         std::string res(ASTContext::depth * 4, ' ');
         res += "[ArrayLiteralExpr]:\n";
+        if (type) {
+            ASTContext ctx;
+            std::string type_label(ASTContext::depth * 4, ' ');
+            type_label += "[Element Type]:\n";
+            res += type_label;
+            res += type->dump();
+        }
         if (!elements.empty()) {
             ASTContext ctx;
             std::string elems_label(ASTContext::depth * 4, ' ');

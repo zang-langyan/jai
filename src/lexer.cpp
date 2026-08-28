@@ -350,21 +350,21 @@ int Lexer::getNextToken(Token* tok) {
             // 关键字映射表（可用哈希或静态数组，此处简单用 if）
             TokenType tok_type;
             if (false) {}
-            else if (strcmp(name, "if") == 0)     tok_type = TokenType::IF;
-            else if (strcmp(name, "else") == 0)   tok_type = TokenType::ELSE;
-            else if (strcmp(name, "while") == 0)  tok_type = TokenType::WHILE;
-            else if (strcmp(name, "for") == 0)    tok_type = TokenType::FOR;
-            else if (strcmp(name, "return") == 0) tok_type = TokenType::RETURN;
-            else if (strcmp(name, "struct") == 0) tok_type = TokenType::STRUCT;
-            else if (strcmp(name, "using") == 0)  tok_type = TokenType::USING;
-            else if (strcmp(name, "import") == 0) tok_type = TokenType::IMPORT;
-            else if (strcmp(name, "true") == 0)   tok_type = TokenType::TRUE;
-            else if (strcmp(name, "false") == 0)  tok_type = TokenType::FALSE;
-            else if (strcmp(name, "break") == 0)  tok_type = TokenType::BREAK;
+            else if (strcmp(name, "if") == 0)        tok_type = TokenType::IF;
+            else if (strcmp(name, "else") == 0)      tok_type = TokenType::ELSE;
+            else if (strcmp(name, "while") == 0)     tok_type = TokenType::WHILE;
+            else if (strcmp(name, "for") == 0)       tok_type = TokenType::FOR;
+            else if (strcmp(name, "return") == 0)    tok_type = TokenType::RETURN;
+            else if (strcmp(name, "struct") == 0)    tok_type = TokenType::STRUCT;
+            else if (strcmp(name, "using") == 0)     tok_type = TokenType::USING;
+            else if (strcmp(name, "import") == 0)    tok_type = TokenType::IMPORT;
+            else if (strcmp(name, "true") == 0)      tok_type = TokenType::TRUE;
+            else if (strcmp(name, "false") == 0)     tok_type = TokenType::FALSE;
+            else if (strcmp(name, "break") == 0)     tok_type = TokenType::BREAK;
             else if (strcmp(name, "continue") == 0)  tok_type = TokenType::CONTINUE;
-            else if (strcmp(name, "cast") == 0)  tok_type = TokenType::CAST;
-            else if (strcmp(name, "New") == 0)  tok_type = TokenType::NEW;
-            else if (strcmp(name, "null") == 0)  tok_type = TokenType::JNULL;
+            else if (strcmp(name, "cast") == 0)      tok_type = TokenType::CAST;
+            else if (strcmp(name, "New") == 0)       tok_type = TokenType::NEW;
+            else if (strcmp(name, "null") == 0)      tok_type = TokenType::JNULL;
             else tok_type = TokenType::Identifier;
 
             MAKETOKENSTR(tok_type, name, len);

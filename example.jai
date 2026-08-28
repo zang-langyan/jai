@@ -20,6 +20,9 @@ fibonacci :: (n : s64) -> s64 {
 }
 
 main :: () {
+    x := float.[12,2,3];
+    print("x: [%d, %d, %d] \n", x[0], x[1], x[2]);
+
     lst := New(LinkedList); // lst is of type *LinkedList
     lst.data = 0.1;
 

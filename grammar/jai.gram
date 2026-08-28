@@ -94,14 +94,14 @@ postfix_expr: primary_expr (
     | '.' name
     )*
 
-primary_expr: name
+primary_expr: array_literal
+            | name
             | literal
             | '(' expression ')'
             | 'cast' '(' type ')' expression       # cast(Type) expr
             | 'New' '(' type ')'
             | lambda_expr
-            | if_expr
-            | array_literal
+            | if_expr       
 
 arguments: expression (',' expression)*
 

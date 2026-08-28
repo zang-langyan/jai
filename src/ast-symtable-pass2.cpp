@@ -38,7 +38,7 @@ int VariableDecl::visit_impl2(SymTable& symtable) {
         }
     }
 
-    if (!inferred_type || inferred_type->kind == TypeInfo::Kind::Unknown) {
+    // if (!inferred_type || inferred_type->kind == TypeInfo::Kind::Unknown) {
         TypeInfo* initType = nullptr;
         if (initializer) {
             initializer->visit2(symtable);
@@ -59,10 +59,7 @@ int VariableDecl::visit_impl2(SymTable& symtable) {
         if (!finalType) {
             ERROR(
                 "Cannot infer type for Variable Declaration: " 
-                << std::string(
-                    static_cast<Name*>(name)->name, 
-                    static_cast<Name*>(name)->len
-                )
+                << this->dump()
             );
             return -1;
         }
@@ -71,7 +68,7 @@ int VariableDecl::visit_impl2(SymTable& symtable) {
             ERROR("Inferred Type is still unknown");
             return -1;
         }
-    }
+    // }
 
     return 0;
 }
@@ -406,6 +403,9 @@ int CallExpr::visit_impl2(SymTable& symtable) {
 }
 
 int IndexExpr::visit_impl2(SymTable& symtable) {
+    base->visit2(symtable);
+    inferred_type = base->inferred_type;
+    index->visit(symtable);
     return 0;
 }
 
@@ -456,6 +456,17 @@ int CastExpr::visit_impl2(SymTable& symtable) {
 }
 
 int ArrayLiteralExpr::visit_impl2(SymTable& symtable) {
+    if (!type) {
+        ERROR("Expect a type in array literal expr");
+    }
+    type->visit(symtable);
+    TypeInfo* eType = type->inferred_type;
+    if (eType->kind == TypeInfo::Kind::Unknown) {
+        ERROR("Fail to get eType Kind, still unknown.");
+        return -1;
+    }
+    inferred_type->name = eType->name + "[](array)";
+    inferred_type->elemType = eType;
     return 0;
 }
 

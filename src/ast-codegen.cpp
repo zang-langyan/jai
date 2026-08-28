@@ -20,7 +20,7 @@ static llvm::Value* LValueAddress(ASTNode* node, LLVMJ& j, llvm::IRBuilder<>& bu
                     return gv;
                 }
             }
-            ERROR("Undefined variable in lvalue: " << sym->name);
+            ERROR("Undefined variable in lvalue: " << node->dump());
             return nullptr;
         }
 
@@ -77,7 +77,7 @@ static llvm::Value* LValueAddress(ASTNode* node, LLVMJ& j, llvm::IRBuilder<>& bu
                 llvm::Value* ptr = builder.CreateLoad(j.toLLVMType(baseTypeInfo), baseAddr, "ptrload");
                 elemPtr = builder.CreateGEP(elemTy, ptr, indexVal, "elemptr");
             } else if (baseTypeInfo->kind == TypeInfo::Kind::Array) {
-                elemTy = j.toLLVMType(baseTypeInfo->baseType);
+                elemTy = j.toLLVMType(baseTypeInfo->elemType);
                 elemPtr = builder.CreateGEP(j.toLLVMType(baseTypeInfo), baseAddr, {builder.getInt32(0), indexVal}, "elemptr");
             } else {
                 ERROR("Indexing non-indexable type");
@@ -177,19 +177,19 @@ void* ConstantDecl::codegen_impl() {
         if (value) {
             if (auto* litExpr = static_cast<LiteralExpr*>(value)) {
                 switch (litExpr->lit->litType) {
-                    case Literal::LitType::Int:
+                    case LitType::Int:
                         initVal = llvm::ConstantInt::get(constType, litExpr->lit->intVal);
                         break;
-                    case Literal::LitType::Float:
+                    case LitType::Float:
                         initVal = llvm::ConstantFP::get(constType, litExpr->lit->floatVal);
                         break;
-                    case Literal::LitType::Bool:
+                    case LitType::Bool:
                         initVal = llvm::ConstantInt::get(constType, litExpr->lit->boolVal ? 1 : 0);
                         break;
-                    case Literal::LitType::Char:
+                    case LitType::Char:
                         initVal = llvm::ConstantInt::get(constType, litExpr->lit->intVal);
                         break;
-                    case Literal::LitType::String:
+                    case LitType::String:
                         initVal = builder.CreateGlobalStringPtr(std::string(litExpr->lit->stringVal.s, litExpr->lit->stringVal.len));
                         break;
                     default:
@@ -657,18 +657,18 @@ void* LiteralExpr::codegen_impl() {
     LLVMJ& j = LLVMJ::instance();
     llvm::IRBuilder<>& builder = j.getBuilder();
     switch (lit->litType) {
-        case Literal::LitType::Int:
+        case LitType::Int:
             return llvm::ConstantInt::get(llvm::Type::getInt64Ty(j.getContext()), lit->intVal);
-        case Literal::LitType::Float:
+        case LitType::Float:
             return llvm::ConstantFP::get(llvm::Type::getDoubleTy(j.getContext()), lit->floatVal);
-        case Literal::LitType::Bool:
+        case LitType::Bool:
             return llvm::ConstantInt::get(llvm::Type::getInt1Ty(j.getContext()), lit->boolVal ? 1 : 0);
-        case Literal::LitType::Char:
+        case LitType::Char:
             return llvm::ConstantInt::get(llvm::Type::getInt8Ty(j.getContext()), lit->intVal);
-        case Literal::LitType::String: {
+        case LitType::String: {
             return builder.CreateGlobalStringPtr(std::string(lit->stringVal.s, lit->stringVal.len));
         }
-        case Literal::LitType::JNull: {
+        case LitType::JNull: {
             llvm::PointerType* ptrTy = llvm::PointerType::getUnqual(j.getContext());
             return llvm::ConstantPointerNull::get(ptrTy);
         }
@@ -684,7 +684,48 @@ void* CastExpr::codegen_impl() {
 }
 
 void* ArrayLiteralExpr::codegen_impl() {
-    return nullptr;
+    LLVMJ& j = LLVMJ::instance();
+    llvm::IRBuilder<>& builder = j.getBuilder();
+
+    if (!inferred_type || inferred_type->kind != TypeInfo::Kind::Array) {
+        ERROR("ArrayLiteralExpr: inferred_type is not array");
+        return nullptr;
+    }
+
+    llvm::Type* elemTy = j.toLLVMType(inferred_type->elemType);
+    if (!elemTy) return nullptr;
+    size_t numElems = elements.size();
+    llvm::ArrayType* arrTy = llvm::ArrayType::get(elemTy, numElems);
+
+    std::vector<llvm::Value*> elemValues;
+    elemValues.reserve(numElems);
+    bool allConstant = true;
+    for (ASTNode* elem : elements) {
+        if (!elem) return nullptr;
+        llvm::Value* val = elem->codegen<llvm::Value>();
+        if (!val) return nullptr;
+        elemValues.push_back(val);
+        if (!llvm::isa<llvm::Constant>(val)) {
+            allConstant = false;
+        }
+    }
+
+    if (allConstant) {
+        std::vector<llvm::Constant*> constElems;
+        constElems.reserve(numElems);
+        for (llvm::Value* v : elemValues) {
+            constElems.push_back(llvm::cast<llvm::Constant>(v));
+        }
+        return llvm::ConstantArray::get(arrTy, constElems);
+    }
+
+    llvm::AllocaInst* alloca = builder.CreateAlloca(arrTy, nullptr, "arrayliteral");
+    for (size_t i = 0; i < numElems; ++i) {
+        llvm::Value* idx = builder.getInt32(i);
+        llvm::Value* elemPtr = builder.CreateGEP(arrTy, alloca, {builder.getInt32(0), idx}, "elemptr");
+        builder.CreateStore(elemValues[i], elemPtr);
+    }
+    return builder.CreateLoad(arrTy, alloca, "arraytmp");
 }
 
 void* NewExpr::codegen_impl() {
